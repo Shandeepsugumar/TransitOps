@@ -2,14 +2,12 @@ import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
 const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
-  // Handle escape key
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape') onClose();
     };
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
-      // Prevent body scrolling
       document.body.style.overflow = 'hidden';
     }
     return () => {
@@ -21,40 +19,31 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
   if (!isOpen) return null;
 
   const sizeClasses = {
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-2xl',
+    sm: 'max-w-md',
+    md: 'max-w-lg',
+    lg: 'max-w-2xl',
+    xl: 'max-w-4xl',
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div 
-        className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" 
         onClick={onClose}
-      ></div>
-
-      {/* Panel */}
-      <div 
-        className={`relative bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full ${sizeClasses[size] || sizeClasses.md} border border-gray-200/50 animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-        )}
+      />
+      
+      <div className={`relative w-full ${sizeClasses[size]} bg-white rounded-2xl shadow-2xl border border-neutral-200 flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200`}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 shrink-0">
+          <h3 className="text-lg font-semibold text-black">{title}</h3>
+          <button 
+            onClick={onClose}
+            className="text-neutral-400 hover:text-black transition-colors rounded-full p-1 hover:bg-neutral-100"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
         
-        {/* Content */}
-        <div className="p-6 overflow-y-auto custom-scrollbar">
+        <div className="p-6 overflow-y-auto">
           {children}
         </div>
       </div>

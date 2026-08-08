@@ -1,60 +1,51 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import toast from 'react-hot-toast';
-import { Edit, Trash2, Plus, AlertTriangle } from 'lucide-react';
+import * as z from 'zod';
 import { driverApi } from '../../api/driverApi';
 import DataTable from '../../components/DataTable';
 import Modal from '../../components/Modal';
 import StatusBadge from '../../components/StatusBadge';
-import ConfirmDialog from '../../components/ConfirmDialog';
+import { Plus, Edit2, ShieldAlert } from 'lucide-react';
+import toast from 'react-hot-toast';
 
-const driverSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  licenseNumber: z.string().min(1, 'License Number is required'),
-  licenseCategory: z.enum(['A', 'B', 'C', 'D', 'E'], { required_error: 'License Category is required' }),
-  licenseExpiryDate: z.string().min(1, 'License Expiry Date is required'),
-  contactNumber: z.string().min(1, 'Contact Number is required'),
-  safetyScore: z.number().min(0).max(100).default(100),
-  status: z.enum(['AVAILABLE', 'OFF_DUTY', 'SUSPENDED']),
+const schema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  licenseNumber: z.string().min(1, 'License number is required'),
+  licenseCategory: z.string().min(1, 'Category is required'),
+  licenseExpiry: z.string().min(1, 'Expiry date is required'),
+  phone: z.string().min(1, 'Phone is required'),
+  email: z.string().email('Invalid email')
 });
 
 export default function Drivers() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingDriver, setEditingDriver] = useState(null);
+  const [editingId, setEditingId] = useState(null);
 
   const { data: drivers = [], isLoading } = useQuery({
     queryKey: ['drivers'],
-    queryFn: () => driverApi.getAll(),
+    queryFn: () => driverApi.getAll().then(res => res.data)
   });
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm({
-    resolver: zodResolver(driverSchema),
+  const form = useForm({
+    resolver: zodResolver(schema),
     defaultValues: {
-      status: 'AVAILABLE',
-      licenseCategory: 'C',
-      safetyScore: 100,
-    },
+      firstName: '', lastName: '', licenseNumber: '', licenseCategory: '',
+      licenseExpiry: '', phone: '', email: ''
+    }
   });
 
   const createMutation = useMutation({
     mutationFn: driverApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drivers'] });
-      toast.success('Driver added successfully');
-      closeModal();
+      toast.success('Driver created successfully');
+      handleCloseModal();
     },
-    onError: (error) => {
-      toast.error(error.backendMessage || 'Failed to add driver');
-    },
+    onError: (error) => toast.error(error.backendMessage || 'Failed to create driver')
   });
 
   const updateMutation = useMutation({
@@ -62,265 +53,140 @@ export default function Drivers() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drivers'] });
       toast.success('Driver updated successfully');
-      closeModal();
+      handleCloseModal();
     },
-    onError: (error) => {
-      toast.error(error.backendMessage || 'Failed to update driver');
-    },
+    onError: (error) => toast.error(error.backendMessage || 'Failed to update driver')
   });
 
-  const openAddModal = () => {
-    setEditingDriver(null);
-    reset({
-      name: '',
-      licenseNumber: '',
-      licenseCategory: 'C',
-      licenseExpiryDate: '',
-      contactNumber: '',
-      safetyScore: 100,
-      status: 'AVAILABLE',
-    });
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (driver) => {
-    setEditingDriver(driver);
-    reset({
-      ...driver,
-      licenseExpiryDate: driver.licenseExpiryDate ? new Date(driver.licenseExpiryDate).toISOString().split('T')[0] : '',
-    });
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setEditingDriver(null);
-    reset();
-  };
-
   const onSubmit = (data) => {
-    if (editingDriver) {
-      updateMutation.mutate({ id: editingDriver.id, data });
+    if (editingId) {
+      updateMutation.mutate({ id: editingId, data });
     } else {
       createMutation.mutate(data);
     }
   };
 
-  const renderLicenseExpiry = (dateString) => {
-    if (!dateString) return <span className="text-gray-400">N/A</span>;
-    
-    const expiryDate = new Date(dateString);
-    const today = new Date();
-    const thirtyDaysFromNow = new Date(today);
-    thirtyDaysFromNow.setDate(today.getDate() + 30);
-    
-    const isExpired = expiryDate < today;
-    const isExpiringSoon = expiryDate >= today && expiryDate <= thirtyDaysFromNow;
-    
-    return (
-      <div className="flex items-center space-x-2">
-        <span>{expiryDate.toLocaleDateString()}</span>
-        {isExpired && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
-            Expired
-          </span>
-        )}
-        {isExpiringSoon && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-            Expiring Soon
-          </span>
-        )}
-      </div>
-    );
+  const handleEdit = (driver) => {
+    setEditingId(driver.id);
+    form.reset({
+      firstName: driver.firstName,
+      lastName: driver.lastName,
+      licenseNumber: driver.licenseNumber,
+      licenseCategory: driver.licenseCategory,
+      licenseExpiry: driver.licenseExpiry.substring(0, 10),
+      phone: driver.phone,
+      email: driver.email
+    });
+    setIsModalOpen(true);
   };
 
-  const renderSafetyScore = (score) => {
-    let colorClass = 'bg-red-500';
-    let textClass = 'text-red-700';
-    if (score >= 80) {
-      colorClass = 'bg-green-500';
-      textClass = 'text-green-700';
-    } else if (score >= 60) {
-      colorClass = 'bg-yellow-500';
-      textClass = 'text-yellow-700';
-    }
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingId(null);
+    form.reset();
+  };
 
+  const getExpiryBadge = (dateString) => {
+    if (!dateString) return null;
+    const expiry = new Date(dateString);
+    const today = new Date();
+    const diffTime = expiry - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) {
+      return <span className="inline-flex px-2 py-1 text-xs font-semibold bg-black text-white rounded-full">Expired</span>;
+    } else if (diffDays <= 30) {
+      return <span className="inline-flex px-2 py-1 text-xs font-semibold bg-neutral-200 text-black rounded-full">Expiring</span>;
+    }
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const getSafetyScoreBar = (score) => {
+    const numScore = parseFloat(score) || 0;
+    const percent = Math.min(100, Math.max(0, numScore));
     return (
-      <div className="flex items-center space-x-2">
-        <span className={`font-medium ${textClass}`}>{score}</span>
-        <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
-          <div className={`h-full ${colorClass}`} style={{ width: `${score}%` }} />
+      <div className="flex flex-col gap-1 w-24">
+        <span className="text-sm font-medium text-black">{numScore.toFixed(1)}/100</span>
+        <div className="h-1.5 w-full bg-neutral-200 rounded-full overflow-hidden">
+          <div className="h-full bg-black rounded-full" style={{ width: `${percent}%` }}></div>
         </div>
       </div>
     );
   };
 
   const columns = [
-    { header: 'Name', accessorKey: 'name' },
-    { header: 'License Number', accessorKey: 'licenseNumber' },
+    { header: 'Name', accessorKey: 'fullName', cell: (info, row) => <div className="font-medium text-black">{row.firstName} {row.lastName}</div> },
+    { header: 'License#', accessorKey: 'licenseNumber' },
     { header: 'Category', accessorKey: 'licenseCategory' },
-    {
-      header: 'License Expiry',
-      accessorKey: 'licenseExpiryDate',
-      cell: ({ row }) => renderLicenseExpiry(row.original.licenseExpiryDate),
-    },
-    { header: 'Contact', accessorKey: 'contactNumber' },
-    {
-      header: 'Safety Score',
-      accessorKey: 'safetyScore',
-      cell: ({ row }) => renderSafetyScore(row.original.safetyScore),
-    },
-    {
-      header: 'Status',
-      accessorKey: 'status',
-      cell: ({ row }) => <StatusBadge status={row.original.status} type="driver" />,
-    },
+    { header: 'License Expiry', accessorKey: 'licenseExpiry', cell: (info) => getExpiryBadge(info) },
+    { header: 'Contact', accessorKey: 'phone' },
+    { header: 'Safety Score', accessorKey: 'safetyScore', cell: (info) => getSafetyScoreBar(info) },
+    { header: 'Status', accessorKey: 'status', cell: (info) => <StatusBadge type="driver" status={info} /> },
     {
       header: 'Actions',
-      id: 'actions',
-      cell: ({ row }) => (
-        <div className="flex space-x-2">
-          <button
-            onClick={() => openEditModal(row.original)}
-            className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
-            title="Edit"
-          >
-            <Edit className="w-5 h-5" />
-          </button>
-        </div>
-      ),
-    },
+      cell: (_, row) => (
+        <button onClick={() => handleEdit(row)} className="p-2 text-neutral-600 hover:text-black hover:bg-neutral-100 rounded-lg transition-colors">
+          <Edit2 className="w-4 h-4" />
+        </button>
+      )
+    }
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Driver Management</h1>
-          <p className="text-gray-500 mt-1">Manage drivers and monitor safety scores</p>
-        </div>
-        <button
-          onClick={openAddModal}
-          className="flex items-center px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors shadow-sm"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Add Driver
+        <h1 className="text-2xl font-bold text-black">Drivers</h1>
+        <button onClick={() => setIsModalOpen(true)} className="flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-neutral-800 transition-colors">
+          <Plus className="w-5 h-5 mr-2" /> Add Driver
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {isLoading ? (
-          <div className="p-8 text-center text-gray-500">Loading drivers...</div>
-        ) : (
-          <DataTable columns={columns} data={drivers} />
-        )}
+      <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+        <DataTable data={drivers} columns={columns} isLoading={isLoading} />
       </div>
 
-      <Modal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        title={editingDriver ? 'Edit Driver' : 'Add New Driver'}
-      >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-            <input
-              {...register('name')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-            />
-            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
-          </div>
-
+      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingId ? 'Edit Driver' : 'Add Driver'}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">License Number</label>
-              <input
-                {...register('licenseNumber')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-              />
-              {errors.licenseNumber && (
-                <p className="text-red-500 text-xs mt-1">{errors.licenseNumber.message}</p>
-              )}
+              <label className="block text-sm font-medium text-neutral-700 mb-1">First Name</label>
+              <input {...form.register('firstName')} className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-1 focus:ring-black focus:border-black outline-none" />
+              {form.formState.errors.firstName && <p className="text-xs text-red-600 mt-1">{form.formState.errors.firstName.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
-              <input
-                {...register('contactNumber')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-              />
-              {errors.contactNumber && (
-                <p className="text-red-500 text-xs mt-1">{errors.contactNumber.message}</p>
-              )}
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Last Name</label>
+              <input {...form.register('lastName')} className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-1 focus:ring-black focus:border-black outline-none" />
+              {form.formState.errors.lastName && <p className="text-xs text-red-600 mt-1">{form.formState.errors.lastName.message}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">License Number</label>
+              <input {...form.register('licenseNumber')} className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-1 focus:ring-black focus:border-black outline-none" />
+              {form.formState.errors.licenseNumber && <p className="text-xs text-red-600 mt-1">{form.formState.errors.licenseNumber.message}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Category</label>
+              <input {...form.register('licenseCategory')} className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-1 focus:ring-black focus:border-black outline-none" />
+              {form.formState.errors.licenseCategory && <p className="text-xs text-red-600 mt-1">{form.formState.errors.licenseCategory.message}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Expiry Date</label>
+              <input type="date" {...form.register('licenseExpiry')} className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-1 focus:ring-black focus:border-black outline-none" />
+              {form.formState.errors.licenseExpiry && <p className="text-xs text-red-600 mt-1">{form.formState.errors.licenseExpiry.message}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Phone</label>
+              <input {...form.register('phone')} className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-1 focus:ring-black focus:border-black outline-none" />
+              {form.formState.errors.phone && <p className="text-xs text-red-600 mt-1">{form.formState.errors.phone.message}</p>}
+            </div>
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Email</label>
+              <input {...form.register('email')} className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-1 focus:ring-black focus:border-black outline-none" />
+              {form.formState.errors.email && <p className="text-xs text-red-600 mt-1">{form.formState.errors.email.message}</p>}
             </div>
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">License Expiry Date</label>
-              <input
-                type="date"
-                {...register('licenseExpiryDate')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-              />
-              {errors.licenseExpiryDate && (
-                <p className="text-red-500 text-xs mt-1">{errors.licenseExpiryDate.message}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">License Category</label>
-              <select
-                {...register('licenseCategory')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-              >
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-                <option value="D">D</option>
-                <option value="E">E</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Safety Score (0-100)</label>
-              <input
-                type="number"
-                {...register('safetyScore', { valueAsNumber: true })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-              />
-              {errors.safetyScore && (
-                <p className="text-red-500 text-xs mt-1">{errors.safetyScore.message}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select
-                {...register('status')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-              >
-                <option value="AVAILABLE">Available</option>
-                <option value="OFF_DUTY">Off Duty</option>
-                <option value="SUSPENDED">Suspended</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={closeModal}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={createMutation.isPending || updateMutation.isPending}
-              className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
-            >
-              {editingDriver ? 'Update' : 'Save'} Driver
-            </button>
+          <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-neutral-200">
+            <button type="button" onClick={handleCloseModal} className="px-4 py-2 bg-white text-black border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors">Cancel</button>
+            <button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="px-4 py-2 bg-black text-white rounded-lg hover:bg-neutral-800 transition-colors disabled:opacity-50">Save Driver</button>
           </div>
         </form>
       </Modal>

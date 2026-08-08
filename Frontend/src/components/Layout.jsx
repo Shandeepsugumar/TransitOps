@@ -3,21 +3,15 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 
-const Layout = ({ children }) => {
+const Layout = () => {
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
-      {/* Sidebar */}
+    <div className="flex h-screen w-full overflow-hidden bg-neutral-50 font-sans">
       <Sidebar />
-
-      {/* Main Layout Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Topbar */}
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Topbar />
-
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-gray-50 relative custom-scrollbar">
-          <div className="max-w-7xl mx-auto w-full">
-            {children || <Outlet />}
+        <main className="flex-1 overflow-y-auto p-8">
+          <div className="max-w-7xl mx-auto">
+            <Outlet />
           </div>
         </main>
       </div>

@@ -1,31 +1,22 @@
 import React from 'react';
 
-const KPICard = ({ title, value, icon: Icon, color = 'blue', subtitle }) => {
-  // Map standard tailwind colors for the icon background
-  const colorMap = {
-    blue: 'bg-blue-100 text-blue-600',
-    green: 'bg-green-100 text-green-600',
-    red: 'bg-red-100 text-red-600',
-    yellow: 'bg-yellow-100 text-yellow-600',
-    purple: 'bg-purple-100 text-purple-600',
-    brand: 'bg-brand-100 text-brand-600',
-    gray: 'bg-gray-100 text-gray-600'
-  };
-
-  const iconStyle = colorMap[color] || colorMap.blue;
-
+const KPICard = ({ title, value, icon: Icon, subtitle }) => {
   return (
-    <div className="bg-white/80 backdrop-blur-md rounded-xl p-6 border border-gray-200/50 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex items-center justify-between group">
-      <div>
-        <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-        <h3 className="text-2xl font-bold text-gray-800 tracking-tight">{value}</h3>
-        {subtitle && (
-          <p className="text-xs text-gray-400 mt-1">{subtitle}</p>
-        )}
+    <div className="bg-white border border-neutral-200 rounded-xl p-6 hover:shadow-md transition-shadow duration-200 flex flex-col justify-between h-full">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-medium text-neutral-500 mb-1">{title}</p>
+          <h4 className="text-3xl font-bold text-black tracking-tight">{value}</h4>
+        </div>
+        <div className="bg-neutral-100 rounded-lg p-3 text-black">
+          {Icon && <Icon className="w-5 h-5" />}
+        </div>
       </div>
-      <div className={`p-4 rounded-full ${iconStyle} transition-transform duration-300 group-hover:scale-110`}>
-        {Icon && <Icon className="h-6 w-6" />}
-      </div>
+      {subtitle && (
+        <p className="mt-4 text-xs font-medium text-neutral-400">
+          {subtitle}
+        </p>
+      )}
     </div>
   );
 };
