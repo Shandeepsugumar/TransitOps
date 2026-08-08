@@ -1,115 +1,48 @@
-import React, { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Search, ChevronsUpDown } from 'lucide-react';
+import React from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const DataTable = ({ columns, data = [], isLoading, emptyMessage = "No data available" }) => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
-  const itemsPerPage = 10;
-
-  const handleSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const filteredData = useMemo(() => {
-    return data.filter(item => {
-      return columns.some(col => {
-        const val = item[col.accessor];
-        if (val == null) return false;
-        return String(val).toLowerCase().includes(searchTerm.toLowerCase());
-      });
-    });
-  }, [data, columns, searchTerm]);
-
-  const sortedData = useMemo(() => {
-    let sortableItems = [...filteredData];
-    if (sortConfig.key !== null) {
-      sortableItems.sort((a, b) => {
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
-        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-    return sortableItems;
-  }, [filteredData, sortConfig]);
-
-  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
-  const currentData = sortedData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  const renderSkeleton = () => (
-    <div className="animate-pulse space-y-4 p-4">
-      {[...Array(5)].map((_, i) => (
-        <div key={i} className="flex gap-4">
-          {columns.map((_, j) => (
-            <div key={j} className="h-6 bg-neutral-200 rounded w-full"></div>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-
+const DataTable = ({ 
+  columns, 
+  data = [], 
+  pagination, 
+  onPageChange,
+  isLoading,
+  emptyMessage = "No records found"
+}) => {
   return (
-    <div className="bg-white border border-neutral-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
-      <div className="p-4 border-b border-neutral-100 flex justify-between items-center">
-        <div className="relative max-w-sm w-full">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-neutral-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="block w-full pl-10 pr-3 py-2 border border-neutral-300 rounded-lg text-sm placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-black focus:border-black"
-          />
-        </div>
-      </div>
-
+    <div className="bg-white border border-[#E5E5E7] rounded-lg shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-neutral-50 border-b border-neutral-200">
-              {columns.map((col, idx) => (
-                <th 
-                  key={idx} 
-                  className={`px-6 py-3 text-xs font-semibold text-neutral-600 uppercase tracking-wider ${col.sortable !== false ? 'cursor-pointer hover:bg-neutral-100' : ''}`}
-                  onClick={() => col.sortable !== false && handleSort(col.accessor)}
-                >
-                  <div className="flex items-center gap-2">
-                    {col.header}
-                    {col.sortable !== false && (
-                      <ChevronsUpDown className="w-3 h-3 text-neutral-400" />
-                    )}
-                  </div>
+        <table className="w-full text-left text-sm whitespace-nowrap">
+          <thead className="bg-[#F7F7F8] border-b border-[#E5E5E7] text-[#6B6B70]">
+            <tr>
+              {columns.map((col, index) => (
+                <th key={index} className="px-6 py-4 font-medium uppercase tracking-wider text-xs">
+                  {col.header}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-100 text-sm">
+          <tbody className="divide-y divide-[#E5E5E7]">
             {isLoading ? (
               <tr>
-                <td colSpan={columns.length}>{renderSkeleton()}</td>
+                <td colSpan={columns.length} className="px-6 py-8 text-center text-[#6B6B70]">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-[#D97706] border-t-transparent rounded-full animate-spin"></div>
+                    Loading data...
+                  </div>
+                </td>
               </tr>
-            ) : currentData.length === 0 ? (
+            ) : data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-6 py-12 text-center text-neutral-500">
+                <td colSpan={columns.length} className="px-6 py-12 text-center text-[#6B6B70]">
                   {emptyMessage}
                 </td>
               </tr>
             ) : (
-              currentData.map((row, i) => (
-                <tr key={i} className="hover:bg-neutral-50 transition-colors">
-                  {columns.map((col, j) => (
-                    <td key={j} className="px-6 py-4 whitespace-nowrap text-black">
+              data.map((row, rowIndex) => (
+                <tr key={rowIndex} className="hover:bg-[#F7F7F8] transition-colors duration-150 group">
+                  {columns.map((col, colIndex) => (
+                    <td key={colIndex} className="px-6 py-4 text-[#1C1C1E]">
                       {col.render ? col.render(row) : row[col.accessor]}
                     </td>
                   ))}
@@ -120,25 +53,54 @@ const DataTable = ({ columns, data = [], isLoading, emptyMessage = "No data avai
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="px-6 py-4 border-t border-neutral-100 flex items-center justify-between bg-white">
-          <span className="text-sm text-neutral-500">
-            Showing <span className="font-medium text-black">{((currentPage - 1) * itemsPerPage) + 1}</span> to <span className="font-medium text-black">{Math.min(currentPage * itemsPerPage, sortedData.length)}</span> of <span className="font-medium text-black">{sortedData.length}</span> results
+      {pagination && pagination.totalPages > 1 && (
+        <div className="px-6 py-4 border-t border-[#E5E5E7] flex items-center justify-between bg-white">
+          <span className="text-sm text-[#6B6B70]">
+            Showing page <span className="font-medium text-[#1C1C1E]">{pagination.page + 1}</span> of <span className="font-medium text-[#1C1C1E]">{pagination.totalPages}</span>
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="p-1.5 rounded-lg border border-neutral-200 text-black hover:bg-neutral-100 disabled:opacity-50 disabled:hover:bg-transparent"
+              onClick={() => onPageChange(pagination.page - 1)}
+              disabled={pagination.page === 0}
+              className="p-1 rounded-lg border border-[#E5E5E7] text-[#1C1C1E] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#F7F7F8] transition-colors bg-white"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft size={20} />
             </button>
+            
+            {Array.from({ length: Math.min(5, pagination.totalPages) }).map((_, idx) => {
+              // Simple sliding window for pagination
+              let pageNum = pagination.page;
+              if (pagination.totalPages <= 5) {
+                pageNum = idx;
+              } else if (pagination.page < 2) {
+                pageNum = idx;
+              } else if (pagination.page > pagination.totalPages - 3) {
+                pageNum = pagination.totalPages - 5 + idx;
+              } else {
+                pageNum = pagination.page - 2 + idx;
+              }
+
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => onPageChange(pageNum)}
+                  className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                    pagination.page === pageNum
+                      ? 'bg-[#D97706] text-white border border-[#D97706]'
+                      : 'text-[#1C1C1E] border border-transparent hover:bg-[#F7F7F8] bg-white'
+                  }`}
+                >
+                  {pageNum + 1}
+                </button>
+              );
+            })}
+            
             <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="p-1.5 rounded-lg border border-neutral-200 text-black hover:bg-neutral-100 disabled:opacity-50 disabled:hover:bg-transparent"
+              onClick={() => onPageChange(pagination.page + 1)}
+              disabled={pagination.page === pagination.totalPages - 1}
+              className="p-1 rounded-lg border border-[#E5E5E7] text-[#1C1C1E] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#F7F7F8] transition-colors bg-white"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight size={20} />
             </button>
           </div>
         </div>

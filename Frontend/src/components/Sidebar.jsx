@@ -1,65 +1,76 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
 import { 
   LayoutDashboard, 
   Truck, 
   Users, 
-  Map, 
+  Route, 
   Wrench, 
-  CreditCard, 
-  BarChart3,
-  LogOut
+  Banknote,
+  LogOut,
+  FileText
 } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
+
+const navItems = [
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/vehicles', label: 'Vehicles', icon: Truck },
+  { path: '/drivers', label: 'Drivers', icon: Users },
+  { path: '/trips', label: 'Trips', icon: Route },
+  { path: '/maintenance', label: 'Maintenance', icon: Wrench },
+  { path: '/expenses', label: 'Expenses', icon: Banknote },
+  { path: '/reports', label: 'Reports', icon: FileText },
+];
 
 const Sidebar = () => {
-  const { role } = useAuthStore();
-
-  const navItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard, roles: ['FLEET_MANAGER', 'DRIVER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST'] },
-    { name: 'Vehicles', path: '/vehicles', icon: Truck, roles: ['FLEET_MANAGER', 'DRIVER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST'] },
-    { name: 'Drivers', path: '/drivers', icon: Users, roles: ['FLEET_MANAGER', 'SAFETY_OFFICER'] },
-    { name: 'Trips', path: '/trips', icon: Map, roles: ['FLEET_MANAGER', 'DRIVER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST'] },
-    { name: 'Maintenance', path: '/maintenance', icon: Wrench, roles: ['FLEET_MANAGER'] },
-    { name: 'Fuel & Expenses', path: '/expenses', icon: CreditCard, roles: ['FLEET_MANAGER', 'FINANCIAL_ANALYST'] },
-    { name: 'Reports', path: '/reports', icon: BarChart3, roles: ['FLEET_MANAGER', 'FINANCIAL_ANALYST'] },
-  ];
-
-  const allowedItems = navItems.filter(item => 
-    !item.roles || item.roles.length === 0 || (role && item.roles.includes(role))
-  );
-
-  // If role is missing but we want dashboard to show up for all, we can adjust above.
-  // Actually the prompt says "Dashboard (all roles)".
-  const finalItems = navItems.filter(item => {
-    if (item.name === 'Dashboard' || item.name === 'Trips') return true;
-    return role && item.roles.includes(role);
-  });
+  const { logout, fullName, role } = useAuthStore();
 
   return (
-    <aside className="w-64 bg-black text-white flex flex-col h-full shrink-0">
-      <div className="h-16 flex items-center px-6 border-b border-neutral-800">
-        <h1 className="text-xl font-bold tracking-tight">TransitOps</h1>
+    <aside className="w-64 bg-[#1C1C1E] flex flex-col h-screen fixed top-0 left-0 shadow-lg z-20">
+      <div className="h-16 flex items-center px-6 border-b border-[#333336]">
+        <h1 className="text-white text-xl font-bold tracking-tight">TransitOps</h1>
       </div>
       
-      <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
-        {finalItems.map((item) => (
-          <NavLink
-            key={item.name}
-            to={item.path}
-            className={({ isActive }) => `
-              flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium
-              ${isActive 
-                ? 'bg-white/10 text-white relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-white before:rounded-r-md' 
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+      <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors duration-200 ${
+                  isActive 
+                    ? 'bg-[#D97706] text-white shadow-sm' 
+                    : 'text-[#6B6B70] hover:text-white hover:bg-[#2A2A2E]'
+                }`
               }
-            `}
-          >
-            <item.icon className="w-5 h-5" />
-            {item.name}
-          </NavLink>
-        ))}
+            >
+              <Icon size={20} />
+              <span className="font-medium text-sm">{item.label}</span>
+            </NavLink>
+          );
+        })}
       </nav>
+
+      <div className="p-4 border-t border-[#333336]">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="w-8 h-8 rounded-full bg-[#2A2A2E] flex items-center justify-center text-white font-bold shrink-0">
+            {fullName ? fullName.charAt(0).toUpperCase() : 'U'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white truncate">{fullName}</p>
+            <p className="text-xs text-[#6B6B70] truncate capitalize">{role?.replace('ROLE_', '')?.toLowerCase()}</p>
+          </div>
+        </div>
+        <button
+          onClick={logout}
+          className="w-full mt-2 flex items-center gap-3 px-4 py-2.5 rounded-lg text-[#6B6B70] hover:text-white hover:bg-[#2A2A2E] transition-colors duration-200"
+        >
+          <LogOut size={20} />
+          <span className="font-medium text-sm">Logout</span>
+        </button>
+      </div>
     </aside>
   );
 };

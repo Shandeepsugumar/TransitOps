@@ -1,45 +1,36 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
-const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
+const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-md' }) => {
   useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') onClose();
-    };
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
       document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
     }
     return () => {
-      document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" 
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
       
-      <div className={`relative w-full ${sizeClasses[size]} bg-white rounded-2xl shadow-2xl border border-neutral-200 flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200`}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 shrink-0">
-          <h3 className="text-lg font-semibold text-black">{title}</h3>
-          <button 
+      <div className={`relative bg-white w-full ${maxWidth} rounded-lg shadow-xl border border-[#E5E5E7] flex flex-col max-h-[90vh] sm:max-h-[85vh]`}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E5E7]">
+          <h2 className="text-lg font-semibold text-[#1C1C1E]">{title}</h2>
+          <button
             onClick={onClose}
-            className="text-neutral-400 hover:text-black transition-colors rounded-full p-1 hover:bg-neutral-100"
+            className="text-[#6B6B70] hover:text-[#1C1C1E] hover:bg-[#F7F7F8] p-1.5 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-[#D97706] focus:ring-opacity-50"
           >
-            <X className="w-5 h-5" />
+            <X size={20} />
           </button>
         </div>
         
@@ -47,7 +38,8 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

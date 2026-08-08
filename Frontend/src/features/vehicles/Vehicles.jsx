@@ -1,125 +1,72 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import toast from 'react-hot-toast';
-import { Edit, Trash2, Plus } from 'lucide-react';
+import { Plus, Edit2, Trash2, X } from 'lucide-react';
 import { vehicleApi } from '../../api/vehicleApi';
-import DataTable from '../../components/DataTable';
-import Modal from '../../components/Modal';
-import StatusBadge from '../../components/StatusBadge';
-import ConfirmDialog from '../../components/ConfirmDialog';
 
 const vehicleSchema = z.object({
   registrationNumber: z.string().min(1, 'Registration is required'),
-  name: z.string().min(1, 'Name is required'),
-  type: z.enum(['Truck', 'Van', 'Trailer'], { required_error: 'Type is required' }),
-  maxLoadCapacity: z.number().min(0.1, 'Must be positive'),
-  odometer: z.number().min(0, 'Must be non-negative'),
-  acquisitionCost: z.number().min(0.1, 'Must be positive'),
-  status: z.enum(['AVAILABLE', 'IN_SHOP', 'RETIRED']),
-  region: z.string().optional(),
+  make: z.string().min(1, 'Make is required'),
+  model: z.string().min(1, 'Model is required'),
+  year: z.number().min(1900).max(new Date().getFullYear() + 1),
+  capacity: z.number().min(1),
+  status: z.enum(['ACTIVE', 'MAINTENANCE', 'INACTIVE']),
 });
 
 export default function Vehicles() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
-  const [vehicleToDelete, setVehicleToDelete] = useState(null);
 
-  const { data: vehicles = [], isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['vehicles'],
-    queryFn: () => vehicleApi.getAll(),
+    queryFn: () => vehicleApi.getAll({ page: 0, size: 100 }),
   });
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setError,
-    formState: { errors },
-  } = useForm({
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm({
     resolver: zodResolver(vehicleSchema),
     defaultValues: {
-      status: 'AVAILABLE',
-      type: 'Truck',
-      odometer: 0,
-      region: '',
-    },
+      status: 'ACTIVE',
+    }
   });
 
   const createMutation = useMutation({
     mutationFn: vehicleApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      queryClient.invalidateQueries(['vehicles']);
       toast.success('Vehicle added successfully');
       closeModal();
     },
     onError: (error) => {
-      if (error.response?.status === 409) {
-        setError('registrationNumber', { message: error.backendMessage || 'Registration already exists' });
-      } else {
-        toast.error(error.backendMessage || 'Failed to add vehicle');
-      }
+      toast.error(error.backendMessage || 'Failed to add vehicle');
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => vehicleApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      queryClient.invalidateQueries(['vehicles']);
       toast.success('Vehicle updated successfully');
       closeModal();
     },
     onError: (error) => {
-      if (error.response?.status === 409) {
-        setError('registrationNumber', { message: error.backendMessage || 'Registration already exists' });
-      } else {
-        toast.error(error.backendMessage || 'Failed to update vehicle');
-      }
+      toast.error(error.backendMessage || 'Failed to update vehicle');
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: vehicleApi.remove,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      queryClient.invalidateQueries(['vehicles']);
       toast.success('Vehicle deleted successfully');
-      setVehicleToDelete(null);
     },
     onError: (error) => {
       toast.error(error.backendMessage || 'Failed to delete vehicle');
-      setVehicleToDelete(null);
     },
   });
-
-  const openAddModal = () => {
-    setEditingVehicle(null);
-    reset({
-      registrationNumber: '',
-      name: '',
-      type: 'Truck',
-      maxLoadCapacity: 0,
-      odometer: 0,
-      acquisitionCost: 0,
-      status: 'AVAILABLE',
-      region: '',
-    });
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (vehicle) => {
-    setEditingVehicle(vehicle);
-    reset(vehicle);
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setEditingVehicle(null);
-    reset();
-  };
 
   const onSubmit = (data) => {
     if (editingVehicle) {
@@ -129,196 +76,218 @@ export default function Vehicles() {
     }
   };
 
-  const columns = [
-    { header: 'Registration', accessorKey: 'registrationNumber' },
-    { header: 'Name', accessorKey: 'name' },
-    { header: 'Type', accessorKey: 'type' },
-    { header: 'Max Load (kg)', accessorKey: 'maxLoadCapacity' },
-    { header: 'Odometer (km)', accessorKey: 'odometer' },
-    {
-      header: 'Status',
-      accessorKey: 'status',
-      cell: ({ row }) => <StatusBadge status={row.original.status} type="vehicle" />,
-    },
-    { header: 'Region', accessorKey: 'region' },
-    {
-      header: 'Actions',
-      id: 'actions',
-      cell: ({ row }) => (
-        <div className="flex space-x-2">
-          <button
-            onClick={() => openEditModal(row.original)}
-            className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
-            title="Edit"
-          >
-            <Edit className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setVehicleToDelete(row.original)}
-            className="p-1 text-red-600 hover:text-red-800 transition-colors"
-            title="Delete/Retire"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
-        </div>
-      ),
-    },
-  ];
+  const openModal = (vehicle = null) => {
+    if (vehicle) {
+      setEditingVehicle(vehicle);
+      setValue('registrationNumber', vehicle.registrationNumber);
+      setValue('make', vehicle.make);
+      setValue('model', vehicle.model);
+      setValue('year', vehicle.year);
+      setValue('capacity', vehicle.capacity);
+      setValue('status', vehicle.status);
+    } else {
+      setEditingVehicle(null);
+      reset({
+        registrationNumber: '',
+        make: '',
+        model: '',
+        year: new Date().getFullYear(),
+        capacity: 1,
+        status: 'ACTIVE'
+      });
+    }
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingVehicle(null);
+    reset();
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm('Are you sure you want to delete this vehicle?')) {
+      deleteMutation.mutate(id);
+    }
+  };
+
+  const vehicles = data?.content || [];
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Vehicle Registry</h1>
-          <p className="text-gray-500 mt-1">Manage your fleet of vehicles</p>
-        </div>
+    <div className="p-6 bg-[#F7F7F8] min-h-screen">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-[#1C1C1E]">Vehicles</h1>
         <button
-          onClick={openAddModal}
-          className="flex items-center px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors shadow-sm"
+          onClick={() => openModal()}
+          className="flex items-center px-4 py-2 bg-[#D97706] text-white rounded-lg hover:bg-amber-700 transition-colors font-medium shadow-sm"
         >
-          <Plus className="w-5 h-5 mr-2" />
+          <Plus className="w-4 h-4 mr-2" />
           Add Vehicle
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {isLoading ? (
-          <div className="p-8 text-center text-gray-500">Loading vehicles...</div>
-        ) : (
-          <DataTable columns={columns} data={vehicles} />
-        )}
+      <div className="bg-white border border-[#E5E5E7] shadow-sm rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50 border-b border-[#E5E5E7] text-sm font-medium text-[#6B6B70]">
+                <th className="py-4 px-6">Registration</th>
+                <th className="py-4 px-6">Make & Model</th>
+                <th className="py-4 px-6">Year</th>
+                <th className="py-4 px-6">Capacity</th>
+                <th className="py-4 px-6">Status</th>
+                <th className="py-4 px-6 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm text-[#1C1C1E]">
+              {isLoading ? (
+                <tr>
+                  <td colSpan="6" className="py-8 text-center text-[#6B6B70]">Loading...</td>
+                </tr>
+              ) : vehicles.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="py-8 text-center text-[#6B6B70]">No vehicles found</td>
+                </tr>
+              ) : (
+                vehicles.map((vehicle) => (
+                  <tr key={vehicle.id} className="border-b border-[#E5E5E7] last:border-0 hover:bg-gray-50 transition-colors">
+                    <td className="py-4 px-6 font-medium">{vehicle.registrationNumber}</td>
+                    <td className="py-4 px-6">{vehicle.make} {vehicle.model}</td>
+                    <td className="py-4 px-6">{vehicle.year}</td>
+                    <td className="py-4 px-6">{vehicle.capacity}</td>
+                    <td className="py-4 px-6">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        vehicle.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
+                        vehicle.status === 'MAINTENANCE' ? 'bg-amber-100 text-amber-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {vehicle.status}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <div className="flex items-center justify-end space-x-3">
+                        <button
+                          onClick={() => openModal(vehicle)}
+                          className="text-[#D97706] hover:text-amber-800 transition-colors"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(vehicle.id)}
+                          className="text-red-500 hover:text-red-700 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <Modal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        title={editingVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}
-      >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Registration Number</label>
-              <input
-                {...register('registrationNumber')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-                placeholder="e.g. AB-123-CD"
-              />
-              {errors.registrationNumber && (
-                <p className="text-red-500 text-xs mt-1">{errors.registrationNumber.message}</p>
-              )}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
+            <div className="flex justify-between items-center p-6 border-b border-[#E5E5E7]">
+              <h2 className="text-lg font-bold text-[#1C1C1E]">
+                {editingVehicle ? 'Edit Vehicle' : 'Add Vehicle'}
+              </h2>
+              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name / Identifier</label>
-              <input
-                {...register('name')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-              />
-              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
-            </div>
-          </div>
+            
+            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Registration Number</label>
+                <input
+                  {...register('registrationNumber')}
+                  className="w-full bg-gray-50 border border-[#E5E5E7] rounded-lg p-2.5 focus:outline-none focus:border-[#D97706] focus:ring-1 focus:ring-[#D97706] transition-colors"
+                  placeholder="e.g. ABC-1234"
+                />
+                {errors.registrationNumber && <p className="mt-1 text-sm text-red-600">{errors.registrationNumber.message}</p>}
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Make</label>
+                  <input
+                    {...register('make')}
+                    className="w-full bg-gray-50 border border-[#E5E5E7] rounded-lg p-2.5 focus:outline-none focus:border-[#D97706] focus:ring-1 focus:ring-[#D97706] transition-colors"
+                    placeholder="e.g. Ford"
+                  />
+                  {errors.make && <p className="mt-1 text-sm text-red-600">{errors.make.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Model</label>
+                  <input
+                    {...register('model')}
+                    className="w-full bg-gray-50 border border-[#E5E5E7] rounded-lg p-2.5 focus:outline-none focus:border-[#D97706] focus:ring-1 focus:ring-[#D97706] transition-colors"
+                    placeholder="e.g. Transit"
+                  />
+                  {errors.model && <p className="mt-1 text-sm text-red-600">{errors.model.message}</p>}
+                </div>
+              </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Type</label>
-              <select
-                {...register('type')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-              >
-                <option value="Truck">Truck</option>
-                <option value="Van">Van</option>
-                <option value="Trailer">Trailer</option>
-              </select>
-              {errors.type && <p className="text-red-500 text-xs mt-1">{errors.type.message}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select
-                {...register('status')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-              >
-                <option value="AVAILABLE">Available</option>
-                <option value="IN_SHOP">In Shop</option>
-                <option value="RETIRED">Retired</option>
-              </select>
-            </div>
-          </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Year</label>
+                  <input
+                    {...register('year', { valueAsNumber: true })}
+                    type="number"
+                    className="w-full bg-gray-50 border border-[#E5E5E7] rounded-lg p-2.5 focus:outline-none focus:border-[#D97706] focus:ring-1 focus:ring-[#D97706] transition-colors"
+                  />
+                  {errors.year && <p className="mt-1 text-sm text-red-600">{errors.year.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Capacity</label>
+                  <input
+                    {...register('capacity', { valueAsNumber: true })}
+                    type="number"
+                    className="w-full bg-gray-50 border border-[#E5E5E7] rounded-lg p-2.5 focus:outline-none focus:border-[#D97706] focus:ring-1 focus:ring-[#D97706] transition-colors"
+                  />
+                  {errors.capacity && <p className="mt-1 text-sm text-red-600">{errors.capacity.message}</p>}
+                </div>
+              </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Max Load (kg)</label>
-              <input
-                type="number"
-                step="0.1"
-                {...register('maxLoadCapacity', { valueAsNumber: true })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-              />
-              {errors.maxLoadCapacity && (
-                <p className="text-red-500 text-xs mt-1">{errors.maxLoadCapacity.message}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Odometer (km)</label>
-              <input
-                type="number"
-                {...register('odometer', { valueAsNumber: true })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-              />
-              {errors.odometer && (
-                <p className="text-red-500 text-xs mt-1">{errors.odometer.message}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Acquisition Cost</label>
-              <input
-                type="number"
-                step="0.1"
-                {...register('acquisitionCost', { valueAsNumber: true })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-              />
-              {errors.acquisitionCost && (
-                <p className="text-red-500 text-xs mt-1">{errors.acquisitionCost.message}</p>
-              )}
-            </div>
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Status</label>
+                <select
+                  {...register('status')}
+                  className="w-full bg-gray-50 border border-[#E5E5E7] rounded-lg p-2.5 focus:outline-none focus:border-[#D97706] focus:ring-1 focus:ring-[#D97706] transition-colors"
+                >
+                  <option value="ACTIVE">Active</option>
+                  <option value="MAINTENANCE">Maintenance</option>
+                  <option value="INACTIVE">Inactive</option>
+                </select>
+                {errors.status && <p className="mt-1 text-sm text-red-600">{errors.status.message}</p>}
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Region (Optional)</label>
-            <input
-              {...register('region')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-            />
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="px-4 py-2 bg-white border border-[#E5E5E7] text-[#1C1C1E] rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                  className="px-4 py-2 bg-[#D97706] text-white rounded-lg hover:bg-amber-700 transition-colors font-medium shadow-sm disabled:opacity-50"
+                >
+                  {editingVehicle ? 'Update Vehicle' : 'Add Vehicle'}
+                </button>
+              </div>
+            </form>
           </div>
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={closeModal}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={createMutation.isPending || updateMutation.isPending}
-              className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
-            >
-              {editingVehicle ? 'Update' : 'Save'} Vehicle
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      <ConfirmDialog
-        isOpen={!!vehicleToDelete}
-        title="Delete Vehicle"
-        message={`Are you sure you want to delete ${vehicleToDelete?.registrationNumber}? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        onConfirm={() => deleteMutation.mutate(vehicleToDelete?.id)}
-        onCancel={() => setVehicleToDelete(null)}
-        isDestructive={true}
-        isLoading={deleteMutation.isPending}
-      />
+        </div>
+      )}
     </div>
   );
 }

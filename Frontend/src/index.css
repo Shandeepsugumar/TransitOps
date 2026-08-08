@@ -6,9 +6,7 @@
 }
 
 body {
-  background-color: #ffffff;
-  color: #0a0a0a;
-  -webkit-font-smoothing: antialiased;
+  @apply bg-[#F7F7F8] text-[#1C1C1E] antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 

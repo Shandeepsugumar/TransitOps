@@ -1,179 +1,106 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { reportsApi } from '../../api/reportsApi';
-import DataTable from '../../components/DataTable';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Download } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { reportsApi } from '../../api/reportsApi';
 import toast from 'react-hot-toast';
 
 export default function Reports() {
-  const [activeTab, setActiveTab] = useState('fuel');
-
-  const { data: fuelData = [], isLoading: loadFuel } = useQuery({
-    queryKey: ['reports', 'fuel'],
-    queryFn: () => reportsApi.getFuelEfficiency().then(res => res.data),
-    enabled: activeTab === 'fuel'
+  const { data: efficiencyData, isLoading: isLoadingEff } = useQuery({
+    queryKey: ['fuelEfficiency'],
+    queryFn: () => reportsApi.getFuelEfficiency(),
   });
 
-  const { data: costData = [], isLoading: loadCost } = useQuery({
-    queryKey: ['reports', 'cost'],
-    queryFn: () => reportsApi.getOperationalCost().then(res => res.data),
-    enabled: activeTab === 'cost'
-  });
-
-  const { data: roiData = [], isLoading: loadRoi } = useQuery({
-    queryKey: ['reports', 'roi'],
-    queryFn: () => reportsApi.getRoi().then(res => res.data),
-    enabled: activeTab === 'roi'
+  const { data: costData, isLoading: isLoadingCost } = useQuery({
+    queryKey: ['operationalCost'],
+    queryFn: () => reportsApi.getOperationalCost(),
   });
 
   const handleExport = async (type) => {
     try {
-      const response = await reportsApi.exportCsv(type);
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `${type}-report.csv`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      toast.success('Report downloaded');
-    } catch (err) {
-      toast.error('Failed to download report');
+      await reportsApi.exportCsv(type);
+      toast.success(`Exported ${type} report successfully`);
+    } catch (error) {
+      toast.error(error.backendMessage || `Failed to export ${type} report`);
     }
   };
 
-  const tabs = [
-    { id: 'fuel', label: 'Fuel Efficiency' },
-    { id: 'cost', label: 'Operational Cost' },
-    { id: 'roi', label: 'ROI' }
-  ];
+  const effChartData = Array.isArray(efficiencyData) ? efficiencyData : efficiencyData?.data || [];
+  const costChartData = Array.isArray(costData) ? costData : costData?.data || [];
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-black">Reports</h1>
-        <button 
-          onClick={() => handleExport(activeTab)}
-          className="flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-neutral-800 transition-colors"
-        >
-          <Download className="w-4 h-4 mr-2" /> Download CSV
-        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-[#1C1C1E]">Reports & Analytics</h1>
+          <p className="text-[#6B6B70] mt-1">Insights and metrics for your fleet</p>
+        </div>
       </div>
 
-      <div className="border-b border-neutral-200">
-        <nav className="flex space-x-8">
-          {tabs.map(tab => (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-lg border border-[#E5E5E7] shadow-sm p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-lg font-bold text-[#1C1C1E]">Operational Costs</h2>
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === tab.id
-                  ? 'border-black text-black'
-                  : 'border-transparent text-neutral-400 hover:text-neutral-600 hover:border-neutral-300'
-              }`}
+              onClick={() => handleExport('costs')}
+              className="bg-[#D97706] text-white px-3 py-1.5 rounded-lg hover:bg-amber-700 flex items-center transition-colors text-sm shadow-sm"
             >
-              {tab.label}
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
             </button>
-          ))}
-        </nav>
-      </div>
-
-      <div className="space-y-6">
-        {activeTab === 'fuel' && (
-          <>
-            <div className="bg-white border border-neutral-200 rounded-xl p-6 h-80">
+          </div>
+          <div className="h-72">
+            {isLoadingCost ? (
+              <div className="w-full h-full flex items-center justify-center text-[#6B6B70]">Loading...</div>
+            ) : costChartData.length === 0 ? (
+              <div className="w-full h-full flex items-center justify-center text-[#6B6B70]">No data available</div>
+            ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={fuelData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" vertical={false} />
-                  <XAxis dataKey="vehicleReg" axisLine={false} tickLine={false} />
-                  <YAxis axisLine={false} tickLine={false} />
-                  <Tooltip cursor={{ fill: '#f5f5f5' }} contentStyle={{ borderRadius: '8px', border: '1px solid #e5e5e5' }} />
-                  <Bar dataKey="efficiency" fill="#000000" radius={[4, 4, 0, 0]} name="Efficiency (km/L)" />
+                <BarChart data={costChartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E5E7" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#6B6B70'}} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#6B6B70'}} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #E5E5E7' }}
+                  />
+                  <Bar dataKey="cost" fill="#2563EB" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
-            <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
-              <DataTable 
-                data={fuelData} 
-                isLoading={loadFuel}
-                columns={[
-                  { header: 'Vehicle', accessorKey: 'vehicleReg' },
-                  { header: 'Total Distance', cell: (_, row) => `${row.totalDistance} km` },
-                  { header: 'Total Fuel', cell: (_, row) => `${row.totalFuel} L` },
-                  { header: 'Efficiency', cell: (_, row) => `${row.efficiency.toFixed(2)} km/L` }
-                ]}
-              />
-            </div>
-          </>
-        )}
+            )}
+          </div>
+        </div>
 
-        {activeTab === 'cost' && (
-          <>
-            <div className="bg-white border border-neutral-200 rounded-xl p-6 h-80">
+        <div className="bg-white rounded-lg border border-[#E5E5E7] shadow-sm p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-lg font-bold text-[#1C1C1E]">Fuel Efficiency</h2>
+            <button
+              onClick={() => handleExport('efficiency')}
+              className="bg-[#D97706] text-white px-3 py-1.5 rounded-lg hover:bg-amber-700 flex items-center transition-colors text-sm shadow-sm"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </button>
+          </div>
+          <div className="h-72">
+            {isLoadingEff ? (
+              <div className="w-full h-full flex items-center justify-center text-[#6B6B70]">Loading...</div>
+            ) : effChartData.length === 0 ? (
+              <div className="w-full h-full flex items-center justify-center text-[#6B6B70]">No data available</div>
+            ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={costData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" vertical={false} />
-                  <XAxis dataKey="vehicleReg" axisLine={false} tickLine={false} />
-                  <YAxis axisLine={false} tickLine={false} />
-                  <Tooltip cursor={{ fill: '#f5f5f5' }} contentStyle={{ borderRadius: '8px', border: '1px solid #e5e5e5' }} />
-                  <Bar dataKey="fuelCost" stackId="a" fill="#000000" name="Fuel Cost ($)" />
-                  <Bar dataKey="maintenanceCost" stackId="a" fill="#666666" name="Maintenance Cost ($)" />
-                  <Bar dataKey="otherExpenses" stackId="a" fill="#cccccc" radius={[4, 4, 0, 0]} name="Other Expenses ($)" />
-                </BarChart>
+                <LineChart data={effChartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E5E7" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#6B6B70'}} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#6B6B70'}} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #E5E5E7' }}
+                  />
+                  <Line type="monotone" dataKey="efficiency" stroke="#16A34A" strokeWidth={3} dot={{r: 4, fill: '#16A34A', strokeWidth: 0}} />
+                </LineChart>
               </ResponsiveContainer>
-            </div>
-            <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
-              <DataTable 
-                data={costData} 
-                isLoading={loadCost}
-                columns={[
-                  { header: 'Vehicle', accessorKey: 'vehicleReg' },
-                  { header: 'Fuel Cost', cell: (_, row) => `$${row.fuelCost.toFixed(2)}` },
-                  { header: 'Maintenance', cell: (_, row) => `$${row.maintenanceCost.toFixed(2)}` },
-                  { header: 'Other', cell: (_, row) => `$${row.otherExpenses.toFixed(2)}` },
-                  { header: 'Total', cell: (_, row) => `$${row.totalCost.toFixed(2)}` }
-                ]}
-              />
-            </div>
-          </>
-        )}
-
-        {activeTab === 'roi' && (
-          <>
-            <div className="bg-white border border-neutral-200 rounded-xl p-6 h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={roiData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" vertical={false} />
-                  <XAxis dataKey="vehicleReg" axisLine={false} tickLine={false} />
-                  <YAxis axisLine={false} tickLine={false} />
-                  <Tooltip cursor={{ fill: '#f5f5f5' }} contentStyle={{ borderRadius: '8px', border: '1px solid #e5e5e5' }} />
-                  <Bar dataKey="roi" fill="#000000" radius={[4, 4, 0, 0]} name="ROI (%)" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
-              <DataTable 
-                data={roiData} 
-                isLoading={loadRoi}
-                columns={[
-                  { header: 'Vehicle', accessorKey: 'vehicleReg' },
-                  { header: 'Revenue', cell: (_, row) => `$${row.revenue.toFixed(2)}` },
-                  { header: 'Total Cost', cell: (_, row) => `$${row.totalCost.toFixed(2)}` },
-                  { header: 'Profit/Loss', cell: (_, row) => `$${row.profitLoss.toFixed(2)}` },
-                  { 
-                    header: 'ROI', 
-                    cell: (_, row) => (
-                      <span className={row.roi >= 0 ? 'font-bold text-black' : 'text-neutral-400'}>
-                        {row.roi.toFixed(2)}%
-                      </span>
-                    )
-                  }
-                ]}
-              />
-            </div>
-          </>
-        )}
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

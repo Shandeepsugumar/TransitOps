@@ -1,54 +1,32 @@
 import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Menu, Bell } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
-import { LogOut, User } from 'lucide-react';
 
-const Topbar = () => {
-  const { fullName, role, logout } = useAuthStore();
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  const getPageTitle = (pathname) => {
-    if (pathname === '/') return 'Dashboard';
-    const path = pathname.split('/')[1];
-    return path.charAt(0).toUpperCase() + path.slice(1).replace('-', ' ');
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+const Topbar = ({ onMenuClick }) => {
+  const { fullName } = useAuthStore();
 
   return (
-    <header className="h-16 bg-white border-b border-neutral-200 flex items-center justify-between px-8 shrink-0">
-      <h2 className="text-lg font-semibold text-black">
-        {getPageTitle(location.pathname)}
-      </h2>
+    <header className="h-16 bg-white border-b border-[#E5E5E7] flex items-center justify-between px-6 sticky top-0 z-10 shadow-sm">
+      <div className="flex items-center gap-4">
+        <button 
+          onClick={onMenuClick}
+          className="p-2 -ml-2 text-[#6B6B70] hover:text-[#1C1C1E] lg:hidden rounded-lg hover:bg-[#F7F7F8] transition-colors"
+        >
+          <Menu size={24} />
+        </button>
+      </div>
       
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-3 text-sm">
-          <div className="flex flex-col items-end leading-tight">
-            <span className="font-medium text-black">{fullName || 'User'}</span>
-            {role && (
-              <span className="px-2 py-0.5 mt-1 rounded-full bg-neutral-200 text-black text-[10px] font-bold tracking-wider uppercase">
-                {role.replace('_', ' ')}
-              </span>
-            )}
-          </div>
-          <div className="w-9 h-9 rounded-full bg-neutral-100 border border-neutral-200 flex items-center justify-center text-neutral-600">
-            <User className="w-5 h-5" />
+      <div className="flex items-center gap-4">
+        <button className="p-2 text-[#6B6B70] hover:text-[#1C1C1E] hover:bg-[#F7F7F8] rounded-lg transition-colors relative">
+          <Bell size={20} />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#D97706] rounded-full border border-white"></span>
+        </button>
+        <div className="h-8 w-px bg-[#E5E5E7] mx-2"></div>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-[#F7F7F8] flex items-center justify-center text-[#1C1C1E] font-medium border border-[#E5E5E7]">
+            {fullName ? fullName.charAt(0).toUpperCase() : 'U'}
           </div>
         </div>
-        
-        <div className="w-px h-6 bg-neutral-200"></div>
-        
-        <button 
-          onClick={handleLogout}
-          className="text-neutral-500 hover:text-black transition-colors flex items-center gap-2 text-sm font-medium"
-        >
-          <LogOut className="w-4 h-4" />
-          Logout
-        </button>
       </div>
     </header>
   );
