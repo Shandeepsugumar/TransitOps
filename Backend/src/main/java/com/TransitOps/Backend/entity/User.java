@@ -1,5 +1,6 @@
 package com.TransitOps.Backend.entity;
 
+import com.TransitOps.Backend.enums.TenantStatus;
 import com.TransitOps.Backend.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
@@ -34,4 +35,12 @@ public class User {
     @Column(nullable = false)
     @Builder.Default
     private boolean enabled = true;
+
+    private Long companyId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private TenantStatus status = TenantStatus.PENDING;
 }
+

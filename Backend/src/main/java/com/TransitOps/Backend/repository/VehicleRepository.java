@@ -7,11 +7,18 @@ import java.util.List;
 import java.util.Optional;
 
 public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
-    boolean existsByRegistrationNumber(String registrationNumber);
+    boolean existsByRegistrationNumberAndCompanyId(String registrationNumber, Long companyId);
     Optional<Vehicle> findByRegistrationNumber(String registrationNumber);
-    List<Vehicle> findByStatusNotIn(List<VehicleStatus> statuses);
-    List<Vehicle> findByStatus(VehicleStatus status);
-    List<Vehicle> findByType(String type);
-    List<Vehicle> findByRegion(String region);
-    long countByStatus(VehicleStatus status);
+    List<Vehicle> findByCompanyIdAndStatusNotIn(Long companyId, List<VehicleStatus> statuses);
+    List<Vehicle> findByCompanyIdAndStatus(Long companyId, VehicleStatus status);
+    List<Vehicle> findByCompanyIdAndType(Long companyId, String type);
+    List<Vehicle> findByCompanyIdAndRegion(Long companyId, String region);
+    long countByCompanyIdAndStatus(Long companyId, VehicleStatus status);
+    List<Vehicle> findByCompanyId(Long companyId);
+    Optional<Vehicle> findByIdAndCompanyId(Long id, Long companyId);
 }
+
+
+
+
+

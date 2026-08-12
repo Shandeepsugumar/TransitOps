@@ -28,11 +28,11 @@ public class DriverService {
     }
 
     public List<DriverResponse> getAllDrivers() {
-        return driverRepository.findAll().stream().map(this::toResponse).collect(Collectors.toList());
+        return driverRepository.findByCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId()).stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     public List<DriverResponse> getAvailableDrivers() {
-        return driverRepository.findAvailableDrivers(LocalDate.now())
+        return driverRepository.findAvailableDrivers(com.TransitOps.Backend.security.SecurityUtils.getCompanyId(), LocalDate.now())
                 .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
@@ -42,7 +42,7 @@ public class DriverService {
 
     @Transactional
     public DriverResponse createDriver(DriverRequest request) {
-        if (driverRepository.existsByLicenseNumber(request.getLicenseNumber())) {
+        if (driverRepository.existsByLicenseNumberAndCompanyId(request.getLicenseNumber(), com.TransitOps.Backend.security.SecurityUtils.getCompanyId())) {
             throw new DuplicateResourceException("Driver with license " + request.getLicenseNumber() + " already exists");
         }
 
@@ -63,6 +63,7 @@ public class DriverService {
                 .status(DriverStatus.valueOf(request.getStatus()))
                 .build();
 
+        driver.setCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId());
         return toResponse(driverRepository.save(driver));
     }
 
@@ -70,8 +71,7 @@ public class DriverService {
     public DriverResponse updateDriver(Long id, DriverRequest request) {
         Driver driver = findById(id);
 
-        if (!driver.getLicenseNumber().equals(request.getLicenseNumber())
-                && driverRepository.existsByLicenseNumber(request.getLicenseNumber())) {
+        if (!driver.getLicenseNumber().equals(request.getLicenseNumber()) && driverRepository.existsByLicenseNumberAndCompanyId(request.getLicenseNumber(), com.TransitOps.Backend.security.SecurityUtils.getCompanyId())) {
             throw new DuplicateResourceException("Driver with license " + request.getLicenseNumber() + " already exists");
         }
 
@@ -83,11 +83,12 @@ public class DriverService {
         driver.setSafetyScore(request.getSafetyScore());
         driver.setStatus(DriverStatus.valueOf(request.getStatus()));
 
+        driver.setCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId());
         return toResponse(driverRepository.save(driver));
     }
 
     public Driver findById(Long id) {
-        return driverRepository.findById(id)
+        return driverRepository.findByIdAndCompanyId(id, com.TransitOps.Backend.security.SecurityUtils.getCompanyId())
                 .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + id));
     }
 
@@ -105,3 +106,7 @@ public class DriverService {
                 .build();
     }
 }
+
+
+
+

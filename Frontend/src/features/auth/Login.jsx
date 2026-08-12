@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -17,6 +17,7 @@ const loginSchema = z.object({
 export default function Login() {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
+  const [warningMessage, setWarningMessage] = useState('');
 
   const {
     register,
@@ -34,16 +35,28 @@ export default function Login() {
         role: data.role,
         fullName: data.fullName,
         email: data.email,
+        companyId: data.companyId,
       });
       toast.success('Login successful');
-      navigate('/');
+      if (data.role === 'SUPER_ADMIN' || data.role === 'ROLE_SUPER_ADMIN') {
+        navigate('/admin/companies');
+      } else {
+        navigate('/');
+      }
     },
     onError: (error) => {
-      toast.error(error.backendMessage || 'Invalid credentials');
+      const msg = error.backendMessage || '';
+      if (msg.toLowerCase().includes('pending approval') || error.response?.status === 403) {
+        setWarningMessage('Your company registration is pending approval. Please wait for an administrator to approve it.');
+      } else {
+        setWarningMessage('');
+        toast.error(msg || 'Invalid credentials');
+      }
     },
   });
 
   const onSubmit = (data) => {
+    setWarningMessage('');
     mutation.mutate(data);
   };
 
@@ -54,6 +67,13 @@ export default function Login() {
           <h1 className="text-2xl font-bold text-[#1C1C1E]">TransitOps</h1>
           <p className="text-[#6B6B70] mt-2">Sign in to your account</p>
         </div>
+
+        {warningMessage && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 flex items-start gap-3">
+            <svg className="w-5 h-5 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            <p className="text-sm">{warningMessage}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div>
@@ -107,9 +127,9 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <Link to="/register" className="text-sm text-[#D97706] hover:underline">
-            Don't have an account? Register here
+        <div className="mt-6 text-center space-y-2">
+          <Link to="/register-company" className="text-sm text-[#D97706] hover:underline block">
+            Registering a new company? Start here
           </Link>
         </div>
       </div>

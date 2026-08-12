@@ -24,11 +24,11 @@ public class VehicleService {
     }
 
     public List<VehicleResponse> getAllVehicles() {
-        return vehicleRepository.findAll().stream().map(this::toResponse).collect(Collectors.toList());
+        return vehicleRepository.findByCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId()).stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     public List<VehicleResponse> getAvailableVehicles() {
-        return vehicleRepository.findByStatusNotIn(Arrays.asList(VehicleStatus.RETIRED, VehicleStatus.IN_SHOP))
+        return vehicleRepository.findByCompanyIdAndStatusNotIn(com.TransitOps.Backend.security.SecurityUtils.getCompanyId(), Arrays.asList(VehicleStatus.RETIRED, VehicleStatus.IN_SHOP))
                 .stream().filter(v -> v.getStatus() == VehicleStatus.AVAILABLE)
                 .map(this::toResponse).collect(Collectors.toList());
     }
@@ -39,7 +39,7 @@ public class VehicleService {
 
     @Transactional
     public VehicleResponse createVehicle(VehicleRequest request) {
-        if (vehicleRepository.existsByRegistrationNumber(request.getRegistrationNumber())) {
+        if (vehicleRepository.existsByRegistrationNumberAndCompanyId(request.getRegistrationNumber(), com.TransitOps.Backend.security.SecurityUtils.getCompanyId())) {
             throw new DuplicateResourceException("Vehicle with registration " + request.getRegistrationNumber() + " already exists");
         }
 
@@ -54,6 +54,7 @@ public class VehicleService {
                 .region(request.getRegion())
                 .build();
 
+        vehicle.setCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId());
         return toResponse(vehicleRepository.save(vehicle));
     }
 
@@ -62,8 +63,7 @@ public class VehicleService {
         Vehicle vehicle = findById(id);
 
         // Check for unique registration if it changed
-        if (!vehicle.getRegistrationNumber().equals(request.getRegistrationNumber())
-                && vehicleRepository.existsByRegistrationNumber(request.getRegistrationNumber())) {
+        if (!vehicle.getRegistrationNumber().equals(request.getRegistrationNumber()) && vehicleRepository.existsByRegistrationNumberAndCompanyId(request.getRegistrationNumber(), com.TransitOps.Backend.security.SecurityUtils.getCompanyId())) {
             throw new DuplicateResourceException("Vehicle with registration " + request.getRegistrationNumber() + " already exists");
         }
 
@@ -76,6 +76,7 @@ public class VehicleService {
         vehicle.setStatus(VehicleStatus.valueOf(request.getStatus()));
         vehicle.setRegion(request.getRegion());
 
+        vehicle.setCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId());
         return toResponse(vehicleRepository.save(vehicle));
     }
 
@@ -87,7 +88,7 @@ public class VehicleService {
     }
 
     public Vehicle findById(Long id) {
-        return vehicleRepository.findById(id)
+        return vehicleRepository.findByIdAndCompanyId(id, com.TransitOps.Backend.security.SecurityUtils.getCompanyId())
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found with id: " + id));
     }
 
@@ -105,3 +106,7 @@ public class VehicleService {
                 .build();
     }
 }
+
+
+
+

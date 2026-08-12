@@ -38,4 +38,7 @@ public class MaintenanceLog {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MaintenanceStatus status;
+
+    private Long companyId;
 }
+

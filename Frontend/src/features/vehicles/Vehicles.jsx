@@ -6,30 +6,37 @@ import * as z from 'zod';
 import toast from 'react-hot-toast';
 import { Plus, Edit2, Trash2, X } from 'lucide-react';
 import { vehicleApi } from '../../api/vehicleApi';
+import { useAuthStore } from '../../store/authStore';
 
 const vehicleSchema = z.object({
   registrationNumber: z.string().min(1, 'Registration is required'),
-  make: z.string().min(1, 'Make is required'),
-  model: z.string().min(1, 'Model is required'),
-  year: z.number().min(1900).max(new Date().getFullYear() + 1),
-  capacity: z.number().min(1),
-  status: z.enum(['ACTIVE', 'MAINTENANCE', 'INACTIVE']),
+  name: z.string().min(1, 'Name is required'),
+  type: z.string().min(1, 'Type is required'),
+  maxLoadCapacity: z.number().min(0.1, 'Must be positive'),
+  odometer: z.number().min(0, 'Must be non-negative'),
+  acquisitionCost: z.number().min(0, 'Must be non-negative'),
+  status: z.enum(['AVAILABLE', 'IN_SHOP', 'RETIRED']),
+  region: z.string().optional(),
 });
 
 export default function Vehicles() {
   const queryClient = useQueryClient();
+  const { role } = useAuthStore();
+  const canModify = role === 'FLEET_MANAGER';
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['vehicles'],
-    queryFn: () => vehicleApi.getAll({ page: 0, size: 100 }),
+    queryFn: () => vehicleApi.getAll(),
   });
 
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, setValue, setError, formState: { errors } } = useForm({
     resolver: zodResolver(vehicleSchema),
     defaultValues: {
-      status: 'ACTIVE',
+      status: 'AVAILABLE',
+      type: 'Truck',
+      odometer: 0,
     }
   });
 
@@ -41,7 +48,11 @@ export default function Vehicles() {
       closeModal();
     },
     onError: (error) => {
-      toast.error(error.backendMessage || 'Failed to add vehicle');
+      if (error.response?.status === 409 || error.backendMessage?.includes('registrationNumber')) {
+        setError('registrationNumber', { type: 'manual', message: 'Registration number already exists' });
+      } else {
+        toast.error(error.backendMessage || 'Failed to add vehicle');
+      }
     },
   });
 
@@ -53,7 +64,11 @@ export default function Vehicles() {
       closeModal();
     },
     onError: (error) => {
-      toast.error(error.backendMessage || 'Failed to update vehicle');
+      if (error.response?.status === 409 || error.backendMessage?.includes('registrationNumber')) {
+        setError('registrationNumber', { type: 'manual', message: 'Registration number already exists' });
+      } else {
+        toast.error(error.backendMessage || 'Failed to update vehicle');
+      }
     },
   });
 
@@ -80,20 +95,24 @@ export default function Vehicles() {
     if (vehicle) {
       setEditingVehicle(vehicle);
       setValue('registrationNumber', vehicle.registrationNumber);
-      setValue('make', vehicle.make);
-      setValue('model', vehicle.model);
-      setValue('year', vehicle.year);
-      setValue('capacity', vehicle.capacity);
+      setValue('name', vehicle.name);
+      setValue('type', vehicle.type);
+      setValue('maxLoadCapacity', vehicle.maxLoadCapacity);
+      setValue('odometer', vehicle.odometer);
+      setValue('acquisitionCost', vehicle.acquisitionCost);
       setValue('status', vehicle.status);
+      setValue('region', vehicle.region || '');
     } else {
       setEditingVehicle(null);
       reset({
         registrationNumber: '',
-        make: '',
-        model: '',
-        year: new Date().getFullYear(),
-        capacity: 1,
-        status: 'ACTIVE'
+        name: '',
+        type: 'Truck',
+        maxLoadCapacity: 0.1,
+        odometer: 0,
+        acquisitionCost: 0,
+        status: 'AVAILABLE',
+        region: '',
       });
     }
     setIsModalOpen(true);
@@ -111,19 +130,21 @@ export default function Vehicles() {
     }
   };
 
-  const vehicles = data?.content || [];
+  const vehicles = Array.isArray(data) ? data : data?.data || [];
 
   return (
     <div className="p-6 bg-[#F7F7F8] min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-[#1C1C1E]">Vehicles</h1>
-        <button
-          onClick={() => openModal()}
-          className="flex items-center px-4 py-2 bg-[#D97706] text-white rounded-lg hover:bg-amber-700 transition-colors font-medium shadow-sm"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Vehicle
-        </button>
+        {canModify && (
+          <button
+            onClick={() => openModal()}
+            className="flex items-center px-4 py-2 bg-[#D97706] text-white rounded-lg hover:bg-amber-700 transition-colors font-medium shadow-sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Vehicle
+          </button>
+        )}
       </div>
 
       <div className="bg-white border border-[#E5E5E7] shadow-sm rounded-lg overflow-hidden">
@@ -132,11 +153,11 @@ export default function Vehicles() {
             <thead>
               <tr className="bg-gray-50 border-b border-[#E5E5E7] text-sm font-medium text-[#6B6B70]">
                 <th className="py-4 px-6">Registration</th>
-                <th className="py-4 px-6">Make & Model</th>
-                <th className="py-4 px-6">Year</th>
-                <th className="py-4 px-6">Capacity</th>
+                <th className="py-4 px-6">Name</th>
+                <th className="py-4 px-6">Type</th>
+                <th className="py-4 px-6">Max Load (kg)</th>
                 <th className="py-4 px-6">Status</th>
-                <th className="py-4 px-6 text-right">Actions</th>
+                {canModify && <th className="py-4 px-6 text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="text-sm text-[#1C1C1E]">
@@ -152,36 +173,38 @@ export default function Vehicles() {
                 vehicles.map((vehicle) => (
                   <tr key={vehicle.id} className="border-b border-[#E5E5E7] last:border-0 hover:bg-gray-50 transition-colors">
                     <td className="py-4 px-6 font-medium">{vehicle.registrationNumber}</td>
-                    <td className="py-4 px-6">{vehicle.make} {vehicle.model}</td>
-                    <td className="py-4 px-6">{vehicle.year}</td>
-                    <td className="py-4 px-6">{vehicle.capacity}</td>
+                    <td className="py-4 px-6">{vehicle.name}</td>
+                    <td className="py-4 px-6">{vehicle.type}</td>
+                    <td className="py-4 px-6">{vehicle.maxLoadCapacity}</td>
                     <td className="py-4 px-6">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        vehicle.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
-                        vehicle.status === 'MAINTENANCE' ? 'bg-amber-100 text-amber-700' :
+                        vehicle.status === 'AVAILABLE' ? 'bg-green-100 text-green-700' :
+                        vehicle.status === 'IN_SHOP' ? 'bg-amber-100 text-amber-700' :
                         'bg-red-100 text-red-700'
                       }`}>
                         {vehicle.status}
                       </span>
                     </td>
-                    <td className="py-4 px-6 text-right">
-                      <div className="flex items-center justify-end space-x-3">
-                        <button
-                          onClick={() => openModal(vehicle)}
-                          className="text-[#D97706] hover:text-amber-800 transition-colors"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(vehicle.id)}
-                          className="text-red-500 hover:text-red-700 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+                    {canModify && (
+                      <td className="py-4 px-6 text-right">
+                        <div className="flex items-center justify-end space-x-3">
+                          <button
+                            onClick={() => openModal(vehicle)}
+                            className="text-[#D97706] hover:text-amber-800 transition-colors"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(vehicle.id)}
+                            className="text-red-500 hover:text-red-700 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -215,43 +238,67 @@ export default function Vehicles() {
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Make</label>
+                  <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Name</label>
                   <input
-                    {...register('make')}
+                    {...register('name')}
                     className="w-full bg-gray-50 border border-[#E5E5E7] rounded-lg p-2.5 focus:outline-none focus:border-[#D97706] focus:ring-1 focus:ring-[#D97706] transition-colors"
-                    placeholder="e.g. Ford"
+                    placeholder="e.g. Delivery Truck 1"
                   />
-                  {errors.make && <p className="mt-1 text-sm text-red-600">{errors.make.message}</p>}
+                  {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Model</label>
-                  <input
-                    {...register('model')}
+                  <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Type</label>
+                  <select
+                    {...register('type')}
                     className="w-full bg-gray-50 border border-[#E5E5E7] rounded-lg p-2.5 focus:outline-none focus:border-[#D97706] focus:ring-1 focus:ring-[#D97706] transition-colors"
-                    placeholder="e.g. Transit"
-                  />
-                  {errors.model && <p className="mt-1 text-sm text-red-600">{errors.model.message}</p>}
+                  >
+                    <option value="Truck">Truck</option>
+                    <option value="Van">Van</option>
+                    <option value="Trailer">Trailer</option>
+                  </select>
+                  {errors.type && <p className="mt-1 text-sm text-red-600">{errors.type.message}</p>}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Year</label>
+                  <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Max Load (kg)</label>
                   <input
-                    {...register('year', { valueAsNumber: true })}
+                    {...register('maxLoadCapacity', { valueAsNumber: true })}
                     type="number"
+                    step="0.1"
                     className="w-full bg-gray-50 border border-[#E5E5E7] rounded-lg p-2.5 focus:outline-none focus:border-[#D97706] focus:ring-1 focus:ring-[#D97706] transition-colors"
                   />
-                  {errors.year && <p className="mt-1 text-sm text-red-600">{errors.year.message}</p>}
+                  {errors.maxLoadCapacity && <p className="mt-1 text-sm text-red-600">{errors.maxLoadCapacity.message}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Capacity</label>
+                  <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Odometer</label>
                   <input
-                    {...register('capacity', { valueAsNumber: true })}
+                    {...register('odometer', { valueAsNumber: true })}
                     type="number"
                     className="w-full bg-gray-50 border border-[#E5E5E7] rounded-lg p-2.5 focus:outline-none focus:border-[#D97706] focus:ring-1 focus:ring-[#D97706] transition-colors"
                   />
-                  {errors.capacity && <p className="mt-1 text-sm text-red-600">{errors.capacity.message}</p>}
+                  {errors.odometer && <p className="mt-1 text-sm text-red-600">{errors.odometer.message}</p>}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Acquisition Cost</label>
+                  <input
+                    {...register('acquisitionCost', { valueAsNumber: true })}
+                    type="number"
+                    step="0.01"
+                    className="w-full bg-gray-50 border border-[#E5E5E7] rounded-lg p-2.5 focus:outline-none focus:border-[#D97706] focus:ring-1 focus:ring-[#D97706] transition-colors"
+                  />
+                  {errors.acquisitionCost && <p className="mt-1 text-sm text-red-600">{errors.acquisitionCost.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Region</label>
+                  <input
+                    {...register('region')}
+                    className="w-full bg-gray-50 border border-[#E5E5E7] rounded-lg p-2.5 focus:outline-none focus:border-[#D97706] focus:ring-1 focus:ring-[#D97706] transition-colors"
+                  />
                 </div>
               </div>
 
@@ -261,9 +308,9 @@ export default function Vehicles() {
                   {...register('status')}
                   className="w-full bg-gray-50 border border-[#E5E5E7] rounded-lg p-2.5 focus:outline-none focus:border-[#D97706] focus:ring-1 focus:ring-[#D97706] transition-colors"
                 >
-                  <option value="ACTIVE">Active</option>
-                  <option value="MAINTENANCE">Maintenance</option>
-                  <option value="INACTIVE">Inactive</option>
+                  <option value="AVAILABLE">Available</option>
+                  <option value="IN_SHOP">In Shop</option>
+                  <option value="RETIRED">Retired</option>
                 </select>
                 {errors.status && <p className="mt-1 text-sm text-red-600">{errors.status.message}</p>}
               </div>

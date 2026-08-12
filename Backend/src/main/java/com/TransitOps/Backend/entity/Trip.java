@@ -51,4 +51,7 @@ public class Trip {
     @Column(nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    private Long companyId;
 }
+

@@ -8,22 +8,55 @@ import {
   Wrench, 
   Banknote,
   LogOut,
-  FileText
+  FileText,
+  Building,
+  Shield
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
-const navItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/vehicles', label: 'Vehicles', icon: Truck },
-  { path: '/drivers', label: 'Drivers', icon: Users },
-  { path: '/trips', label: 'Trips', icon: Route },
-  { path: '/maintenance', label: 'Maintenance', icon: Wrench },
-  { path: '/expenses', label: 'Expenses', icon: Banknote },
-  { path: '/reports', label: 'Reports', icon: FileText },
-];
-
 const Sidebar = () => {
   const { logout, fullName, role } = useAuthStore();
+
+  const getNavItems = (userRole) => {
+    if (userRole === 'SUPER_ADMIN') {
+      return [
+        { path: '/admin/companies', label: 'Company Approvals', icon: Building }
+      ];
+    }
+
+    const items = [{ path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }];
+
+    if (userRole === 'FLEET_MANAGER') {
+      items.push(
+        { path: '/vehicles', label: 'Vehicles', icon: Truck },
+        { path: '/drivers', label: 'Drivers', icon: Users },
+        { path: '/trips', label: 'Trips', icon: Route },
+        { path: '/maintenance', label: 'Maintenance', icon: Wrench },
+        { path: '/expenses', label: 'Expenses', icon: Banknote },
+        { path: '/reports', label: 'Reports', icon: FileText },
+        { path: '/team', label: 'Team', icon: Shield }
+      );
+    } else if (userRole === 'DRIVER') {
+      items.push(
+        { path: '/trips', label: 'Trips', icon: Route },
+        { path: '/vehicles', label: 'Vehicles', icon: Truck },
+        { path: '/drivers', label: 'Drivers', icon: Users }
+      );
+    } else if (userRole === 'SAFETY_OFFICER') {
+      items.push(
+        { path: '/drivers', label: 'Drivers', icon: Users }
+      );
+    } else if (userRole === 'FINANCIAL_ANALYST') {
+      items.push(
+        { path: '/expenses', label: 'Expenses', icon: Banknote },
+        { path: '/reports', label: 'Reports', icon: FileText }
+      );
+    }
+
+    return items;
+  };
+
+  const navItems = getNavItems(role);
 
   return (
     <aside className="w-64 bg-[#1C1C1E] flex flex-col h-screen fixed top-0 left-0 shadow-lg z-20">

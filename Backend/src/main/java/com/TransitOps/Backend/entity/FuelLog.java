@@ -30,4 +30,7 @@ public class FuelLog {
 
     @Column(nullable = false)
     private LocalDate date;
+
+    private Long companyId;
 }
+

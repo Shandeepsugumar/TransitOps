@@ -2,12 +2,11 @@ package com.TransitOps.Backend.service;
 
 import com.TransitOps.Backend.dto.AuthResponse;
 import com.TransitOps.Backend.dto.LoginRequest;
-import com.TransitOps.Backend.dto.RegisterRequest;
 import com.TransitOps.Backend.entity.User;
-import com.TransitOps.Backend.enums.Role;
-import com.TransitOps.Backend.exception.DuplicateResourceException;
+import com.TransitOps.Backend.enums.TenantStatus;
 import com.TransitOps.Backend.repository.UserRepository;
 import com.TransitOps.Backend.security.JwtUtil;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -37,45 +36,21 @@ public class AuthService {
             throw new BadCredentialsException("Account is disabled");
         }
 
-        String token = jwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole().name());
+        if (user.getStatus() == TenantStatus.PENDING) {
+            throw new AccessDeniedException("Account is pending approval");
+        }
+        if (user.getStatus() == TenantStatus.REJECTED) {
+            throw new AccessDeniedException("Account registration was rejected");
+        }
+
+        String token = jwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole().name(), user.getCompanyId());
 
         return AuthResponse.builder()
                 .token(token)
                 .role(user.getRole().name())
                 .fullName(user.getFullName())
                 .email(user.getEmail())
-                .build();
-    }
-
-    public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new DuplicateResourceException("Email already registered: " + request.getEmail());
-        }
-
-        Role role;
-        try {
-            role = Role.valueOf(request.getRole());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid role: " + request.getRole());
-        }
-
-        User user = User.builder()
-                .fullName(request.getFullName())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .contactNumber(request.getContactNumber())
-                .role(role)
-                .enabled(true)
-                .build();
-
-        User saved = userRepository.save(user);
-        String token = jwtUtil.generateToken(saved.getId(), saved.getEmail(), saved.getRole().name());
-
-        return AuthResponse.builder()
-                .token(token)
-                .role(saved.getRole().name())
-                .fullName(saved.getFullName())
-                .email(saved.getEmail())
+                .companyId(user.getCompanyId())
                 .build();
     }
 }

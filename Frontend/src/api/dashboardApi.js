@@ -1,5 +1,5 @@
 import axiosClient from './axiosClient';
 
 export const dashboardApi = {
-  getKpis: () => axiosClient.get('/dashboard/kpis').then(r => r.data),
+  getKpis: (params) => axiosClient.get('/dashboard/kpis', { params }).then(r => r.data),
 };

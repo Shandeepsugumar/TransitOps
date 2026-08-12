@@ -28,12 +28,12 @@ public class MaintenanceService {
     }
 
     public List<MaintenanceResponse> getByVehicleId(Long vehicleId) {
-        return maintenanceLogRepository.findByVehicleId(vehicleId)
+        return maintenanceLogRepository.findByCompanyIdAndVehicleId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId(), vehicleId)
                 .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     public List<MaintenanceResponse> getAll() {
-        return maintenanceLogRepository.findAll()
+        return maintenanceLogRepository.findByCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId())
                 .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
@@ -52,12 +52,13 @@ public class MaintenanceService {
                 .build();
 
         vehicle.setStatus(VehicleStatus.IN_SHOP);
+        log.setCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId());
         return toResponse(maintenanceLogRepository.save(log));
     }
 
     @Transactional
     public MaintenanceResponse closeMaintenanceLog(Long id) {
-        MaintenanceLog log = maintenanceLogRepository.findById(id)
+        MaintenanceLog log = maintenanceLogRepository.findByIdAndCompanyId(id, com.TransitOps.Backend.security.SecurityUtils.getCompanyId())
                 .orElseThrow(() -> new ResourceNotFoundException("Maintenance log not found with id: " + id));
 
         if (log.getStatus() == MaintenanceStatus.CLOSED) {
@@ -72,6 +73,7 @@ public class MaintenanceService {
             vehicle.setStatus(VehicleStatus.AVAILABLE);
         }
 
+        log.setCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId());
         return toResponse(maintenanceLogRepository.save(log));
     }
 
@@ -88,3 +90,6 @@ public class MaintenanceService {
                 .build();
     }
 }
+
+
+

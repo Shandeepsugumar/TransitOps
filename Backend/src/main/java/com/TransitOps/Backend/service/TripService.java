@@ -34,11 +34,11 @@ public class TripService {
     }
 
     public List<TripResponse> getAllTrips() {
-        return tripRepository.findAll().stream().map(this::toResponse).collect(Collectors.toList());
+        return tripRepository.findByCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId()).stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     public List<TripResponse> getTripsByStatus(TripStatus status) {
-        return tripRepository.findByStatus(status).stream().map(this::toResponse).collect(Collectors.toList());
+        return tripRepository.findByCompanyIdAndStatus(com.TransitOps.Backend.security.SecurityUtils.getCompanyId(), status).stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     @Transactional
@@ -64,6 +64,7 @@ public class TripService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
+        trip.setCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId());
         return toResponse(tripRepository.save(trip));
     }
 
@@ -113,6 +114,7 @@ public class TripService {
         vehicle.setStatus(VehicleStatus.ON_TRIP);
         driver.setStatus(DriverStatus.ON_TRIP);
 
+        trip.setCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId());
         return toResponse(tripRepository.save(trip));
     }
 
@@ -137,6 +139,7 @@ public class TripService {
         Driver driver = trip.getDriver();
         driver.setStatus(DriverStatus.AVAILABLE);
 
+        trip.setCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId());
         return toResponse(tripRepository.save(trip));
     }
 
@@ -155,11 +158,12 @@ public class TripService {
         }
 
         trip.setStatus(TripStatus.CANCELLED);
+        trip.setCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId());
         return toResponse(tripRepository.save(trip));
     }
 
     public Trip findById(Long id) {
-        return tripRepository.findById(id)
+        return tripRepository.findByIdAndCompanyId(id, com.TransitOps.Backend.security.SecurityUtils.getCompanyId())
                 .orElseThrow(() -> new ResourceNotFoundException("Trip not found with id: " + id));
     }
 
@@ -183,3 +187,6 @@ public class TripService {
                 .build();
     }
 }
+
+
+

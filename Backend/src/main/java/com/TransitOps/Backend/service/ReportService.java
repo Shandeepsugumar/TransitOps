@@ -36,18 +36,19 @@ public class ReportService {
     }
 
     public DashboardKpiResponse getDashboardKpis() {
-        long totalVehicles = vehicleRepository.count();
-        long availableVehicles = vehicleRepository.countByStatus(VehicleStatus.AVAILABLE);
-        long onTripVehicles = vehicleRepository.countByStatus(VehicleStatus.ON_TRIP);
-        long inMaintenanceVehicles = vehicleRepository.countByStatus(VehicleStatus.IN_SHOP);
-        long retiredVehicles = vehicleRepository.countByStatus(VehicleStatus.RETIRED);
+        Long companyId = com.TransitOps.Backend.security.SecurityUtils.getCompanyId();
+        long availableVehicles = vehicleRepository.countByCompanyIdAndStatus(companyId, VehicleStatus.AVAILABLE);
+        long onTripVehicles = vehicleRepository.countByCompanyIdAndStatus(companyId, VehicleStatus.ON_TRIP);
+        long inMaintenanceVehicles = vehicleRepository.countByCompanyIdAndStatus(companyId, VehicleStatus.IN_SHOP);
+        long retiredVehicles = vehicleRepository.countByCompanyIdAndStatus(companyId, VehicleStatus.RETIRED);
+        long totalVehicles = availableVehicles + onTripVehicles + inMaintenanceVehicles + retiredVehicles;
 
-        long activeTrips = tripRepository.countByStatus(TripStatus.DISPATCHED);
-        long pendingTrips = tripRepository.countByStatus(TripStatus.DRAFT);
-        long completedTrips = tripRepository.countByStatus(TripStatus.COMPLETED);
+        long activeTrips = tripRepository.countByCompanyIdAndStatus(companyId, TripStatus.DISPATCHED);
+        long pendingTrips = tripRepository.countByCompanyIdAndStatus(companyId, TripStatus.DRAFT);
+        long completedTrips = tripRepository.countByCompanyIdAndStatus(companyId, TripStatus.COMPLETED);
 
-        long driversOnDuty = driverRepository.countByStatus(DriverStatus.ON_TRIP);
-        long totalDrivers = driverRepository.count();
+        long driversOnDuty = driverRepository.countByCompanyIdAndStatus(companyId, DriverStatus.ON_TRIP);
+        long totalDrivers = driverRepository.findByCompanyId(companyId).size();
 
         double utilization = totalVehicles > 0
                 ? ((double) onTripVehicles / (totalVehicles - retiredVehicles)) * 100.0
@@ -69,7 +70,7 @@ public class ReportService {
     }
 
     public List<FuelEfficiencyResponse> getFuelEfficiency() {
-        return vehicleRepository.findAll().stream().map(v -> {
+        return vehicleRepository.findByCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId()).stream().map(v -> {
             Double totalDistance = tripRepository.sumDistanceByVehicleId(v.getId());
             Double totalFuel = tripRepository.sumFuelConsumedByVehicleId(v.getId());
             double efficiency = (totalFuel != null && totalFuel > 0) ? totalDistance / totalFuel : 0.0;
@@ -86,7 +87,7 @@ public class ReportService {
     }
 
     public List<OperationalCostResponse> getOperationalCost() {
-        return vehicleRepository.findAll().stream().map(v -> {
+        return vehicleRepository.findByCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId()).stream().map(v -> {
             BigDecimal fuelCost = fuelLogRepository.sumCostByVehicleId(v.getId());
             BigDecimal maintenanceCost = maintenanceLogRepository.sumCostByVehicleId(v.getId());
 
@@ -101,7 +102,7 @@ public class ReportService {
     }
 
     public List<VehicleRoiResponse> getVehicleRoi() {
-        return vehicleRepository.findAll().stream().map(v -> {
+        return vehicleRepository.findByCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId()).stream().map(v -> {
             BigDecimal revenue = tripRepository.sumRevenueByVehicleId(v.getId());
             BigDecimal fuelCost = fuelLogRepository.sumCostByVehicleId(v.getId());
             BigDecimal maintenanceCost = maintenanceLogRepository.sumCostByVehicleId(v.getId());
@@ -158,3 +159,5 @@ public class ReportService {
         writer.flush();
     }
 }
+
+

@@ -42,4 +42,7 @@ public class Vehicle {
     private VehicleStatus status;
 
     private String region;
+
+    private Long companyId;
 }
+

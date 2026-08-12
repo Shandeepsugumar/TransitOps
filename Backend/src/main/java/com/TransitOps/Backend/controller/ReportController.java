@@ -29,6 +29,11 @@ public class ReportController {
         return ResponseEntity.ok(reportService.getFuelEfficiency());
     }
 
+    @GetMapping("/reports/fleet-utilization")
+    public ResponseEntity<DashboardKpiResponse> getFleetUtilization() {
+        return ResponseEntity.ok(reportService.getDashboardKpis());
+    }
+
     @GetMapping("/reports/operational-cost")
     public ResponseEntity<List<OperationalCostResponse>> getOperationalCost() {
         return ResponseEntity.ok(reportService.getOperationalCost());

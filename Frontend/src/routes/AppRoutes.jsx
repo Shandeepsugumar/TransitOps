@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import Login from '../features/auth/Login';
-import Register from '../features/auth/Register';
+import RegisterCompany from '../features/auth/RegisterCompany';
 import Dashboard from '../features/dashboard/Dashboard';
 import Vehicles from '../features/vehicles/Vehicles';
 import Drivers from '../features/drivers/Drivers';
@@ -10,17 +10,36 @@ import Trips from '../features/trips/Trips';
 import Maintenance from '../features/maintenance/Maintenance';
 import FuelExpenses from '../features/fuel-expenses/FuelExpenses';
 import Reports from '../features/reports/Reports';
+import CompanyApprovals from '../features/admin/CompanyApprovals';
+import TeamManagement from '../features/team/TeamManagement';
 
-const ALL_ROLES = ['FLEET_MANAGER', 'DRIVER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST'];
+const REGULAR_ROLES = ['FLEET_MANAGER', 'DRIVER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST'];
+const LAYOUT_ROLES = [...REGULAR_ROLES, 'SUPER_ADMIN'];
 
 const AppRoutes = () => (
   <Routes>
     <Route path="/login" element={<Login />} />
-    <Route path="/register" element={<Register />} />
+    <Route path="/register-company" element={<RegisterCompany />} />
     <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-    <Route element={<ProtectedRoute roles={ALL_ROLES}><Layout /></ProtectedRoute>}>
-      <Route path="/dashboard" element={<Dashboard />} />
+    <Route element={<ProtectedRoute roles={LAYOUT_ROLES}><Layout /></ProtectedRoute>}>
+      <Route path="/dashboard" element={
+        <ProtectedRoute roles={REGULAR_ROLES}>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/admin/companies" element={
+        <ProtectedRoute roles={['SUPER_ADMIN']}>
+          <CompanyApprovals />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/team" element={
+        <ProtectedRoute roles={['FLEET_MANAGER']}>
+          <TeamManagement />
+        </ProtectedRoute>
+      } />
 
       <Route path="/vehicles" element={
         <ProtectedRoute roles={['FLEET_MANAGER', 'DRIVER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST']}>
@@ -35,7 +54,7 @@ const AppRoutes = () => (
       } />
 
       <Route path="/trips" element={
-        <ProtectedRoute roles={ALL_ROLES}>
+        <ProtectedRoute roles={REGULAR_ROLES}>
           <Trips />
         </ProtectedRoute>
       } />

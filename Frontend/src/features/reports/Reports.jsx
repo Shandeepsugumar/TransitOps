@@ -29,7 +29,7 @@ export default function Reports() {
   const costChartData = Array.isArray(costData) ? costData : costData?.data || [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-[#F7F7F8] min-h-screen p-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-[#1C1C1E]">Reports & Analytics</h1>

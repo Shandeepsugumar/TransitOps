@@ -43,7 +43,7 @@ const DataTable = ({
                 <tr key={rowIndex} className="hover:bg-[#F7F7F8] transition-colors duration-150 group">
                   {columns.map((col, colIndex) => (
                     <td key={colIndex} className="px-6 py-4 text-[#1C1C1E]">
-                      {col.render ? col.render(row) : row[col.accessor]}
+                      {col.render ? col.render(row[col.accessor], row) : row[col.accessor]}
                     </td>
                   ))}
                 </tr>

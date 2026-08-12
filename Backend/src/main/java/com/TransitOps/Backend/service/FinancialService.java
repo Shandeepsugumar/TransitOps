@@ -28,8 +28,8 @@ public class FinancialService {
     // --- Fuel Logs ---
     public List<FuelLogResponse> getFuelLogs(Long vehicleId) {
         List<FuelLog> logs = vehicleId != null
-                ? fuelLogRepository.findByVehicleId(vehicleId)
-                : fuelLogRepository.findAll();
+                ? fuelLogRepository.findByCompanyIdAndVehicleId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId(), vehicleId)
+                : fuelLogRepository.findByCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId());
         return logs.stream().map(this::toFuelResponse).collect(Collectors.toList());
     }
 
@@ -44,14 +44,15 @@ public class FinancialService {
                 .date(LocalDate.parse(request.getDate()))
                 .build();
 
+        log.setCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId());
         return toFuelResponse(fuelLogRepository.save(log));
     }
 
     // --- Expenses ---
     public List<ExpenseResponse> getExpenses(Long vehicleId) {
         List<Expense> expenses = vehicleId != null
-                ? expenseRepository.findByVehicleId(vehicleId)
-                : expenseRepository.findAll();
+                ? expenseRepository.findByCompanyIdAndVehicleId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId(), vehicleId)
+                : expenseRepository.findByCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId());
         return expenses.stream().map(this::toExpenseResponse).collect(Collectors.toList());
     }
 
@@ -67,6 +68,7 @@ public class FinancialService {
                 .notes(request.getNotes())
                 .build();
 
+        expense.setCompanyId(com.TransitOps.Backend.security.SecurityUtils.getCompanyId());
         return toExpenseResponse(expenseRepository.save(expense));
     }
 
@@ -93,3 +95,6 @@ public class FinancialService {
                 .build();
     }
 }
+
+
+
