@@ -51,7 +51,11 @@ public class JwtUtil {
     }
 
     public Long extractCompanyId(String token) {
-        return extractClaims(token).get("companyId", Long.class);
+        Object companyId = extractClaims(token).get("companyId");
+        if (companyId instanceof Number) {
+            return ((Number) companyId).longValue();
+        }
+        return null;
     }
 
     public boolean isTokenValid(String token) {
