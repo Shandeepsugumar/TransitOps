@@ -16,7 +16,7 @@ public class VehicleRequest {
     private Double maxLoadCapacity;
     @NotNull @PositiveOrZero
     private Double odometer;
-    @NotNull @Positive
+    @NotNull @PositiveOrZero
     private BigDecimal acquisitionCost;
     @NotBlank
     private String status;
