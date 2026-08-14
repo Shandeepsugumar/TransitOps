@@ -225,7 +225,7 @@ export default function Vehicles() {
               </button>
             </div>
             
-            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+            <form method="post" onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Registration Number</label>
                 <input

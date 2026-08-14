@@ -214,7 +214,7 @@ export default function Trips() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleSubmitCreate(onCreate)} className="p-6 space-y-4">
+            <form method="post" onSubmit={handleSubmitCreate(onCreate)} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Vehicle</label>
@@ -328,7 +328,7 @@ export default function Trips() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleSubmitComplete(onComplete)} className="p-6 space-y-4">
+            <form method="post" onSubmit={handleSubmitComplete(onComplete)} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Final Odometer</label>
                 <input

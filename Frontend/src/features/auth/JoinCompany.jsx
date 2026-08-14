@@ -127,7 +127,7 @@ export default function JoinCompany() {
             )}
           </div>
         ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form method="post" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="p-4 bg-gray-50 border border-[#E5E5E7] rounded-lg flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <Building className="h-5 w-5 text-[#D97706]" />

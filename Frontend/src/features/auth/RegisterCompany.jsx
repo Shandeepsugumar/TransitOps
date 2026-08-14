@@ -67,7 +67,7 @@ export default function RegisterCompany() {
           <p className="text-[#6B6B70] mt-2">Register your company</p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form method="post" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Company Name</label>
             <div className="relative">

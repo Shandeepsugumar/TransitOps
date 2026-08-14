@@ -52,7 +52,7 @@ export default function Register() {
           <p className="text-[#6B6B70] mt-2">Create a new account</p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form method="post" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-[#1C1C1E] mb-1">
               Full Name

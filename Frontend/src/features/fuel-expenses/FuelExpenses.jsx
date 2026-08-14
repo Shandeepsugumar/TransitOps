@@ -198,7 +198,7 @@ export default function FuelExpenses() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleFuel((data) => fuelMutation.mutate(data))} className="p-6 space-y-4">
+            <form method="post" onSubmit={handleFuel((data) => fuelMutation.mutate(data))} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Vehicle</label>
                 <select
@@ -276,7 +276,7 @@ export default function FuelExpenses() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleExp((data) => expenseMutation.mutate(data))} className="p-6 space-y-4">
+            <form method="post" onSubmit={handleExp((data) => expenseMutation.mutate(data))} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Vehicle</label>
                 <select

@@ -155,7 +155,7 @@ export default function TeamManagement() {
         onClose={handleCloseModal} 
         title={editingMember ? 'Edit Team Member' : 'Add Team Member'}
       >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4">
+        <form method="post" onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4">
           <div>
             <label className="block text-sm font-medium text-[#1C1C1E] mb-1">Full Name</label>
             <input
