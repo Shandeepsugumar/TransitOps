@@ -3,6 +3,7 @@ import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import Login from '../features/auth/Login';
 import RegisterCompany from '../features/auth/RegisterCompany';
+import JoinCompany from '../features/auth/JoinCompany';
 import Dashboard from '../features/dashboard/Dashboard';
 import Vehicles from '../features/vehicles/Vehicles';
 import Drivers from '../features/drivers/Drivers';
@@ -13,30 +14,30 @@ import Reports from '../features/reports/Reports';
 import CompanyApprovals from '../features/admin/CompanyApprovals';
 import TeamManagement from '../features/team/TeamManagement';
 
-const REGULAR_ROLES = ['FLEET_MANAGER', 'DRIVER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST'];
-const LAYOUT_ROLES = [...REGULAR_ROLES, 'SUPER_ADMIN'];
+const REGULAR_ROLES = ['SUPER_ADMIN', 'FLEET_MANAGER', 'DRIVER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST'];
 
 const AppRoutes = () => (
   <Routes>
     <Route path="/login" element={<Login />} />
     <Route path="/register-company" element={<RegisterCompany />} />
+    <Route path="/join-company" element={<JoinCompany />} />
     <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-    <Route element={<ProtectedRoute roles={LAYOUT_ROLES}><Layout /></ProtectedRoute>}>
+    <Route element={<ProtectedRoute roles={REGULAR_ROLES}><Layout /></ProtectedRoute>}>
       <Route path="/dashboard" element={
         <ProtectedRoute roles={REGULAR_ROLES}>
           <Dashboard />
         </ProtectedRoute>
       } />
       
-      <Route path="/admin/companies" element={
+      <Route path="/pending-approvals" element={
         <ProtectedRoute roles={['SUPER_ADMIN']}>
           <CompanyApprovals />
         </ProtectedRoute>
       } />
 
       <Route path="/team" element={
-        <ProtectedRoute roles={['FLEET_MANAGER']}>
+        <ProtectedRoute roles={['SUPER_ADMIN', 'FLEET_MANAGER']}>
           <TeamManagement />
         </ProtectedRoute>
       } />

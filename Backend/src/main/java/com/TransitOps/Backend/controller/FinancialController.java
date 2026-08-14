@@ -31,7 +31,7 @@ public class FinancialController {
     }
 
     @PostMapping("/fuel-logs")
-    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'FINANCIAL_ANALYST')")
+    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN', 'FINANCIAL_ANALYST')")
     public ResponseEntity<FuelLogResponse> createFuelLog(@Valid @RequestBody FuelLogRequest request) {
         return ResponseEntity.ok(financialService.createFuelLog(request));
     }
@@ -43,7 +43,7 @@ public class FinancialController {
     }
 
     @PostMapping("/expenses")
-    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'FINANCIAL_ANALYST')")
+    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN', 'FINANCIAL_ANALYST')")
     public ResponseEntity<ExpenseResponse> createExpense(@Valid @RequestBody ExpenseRequest request) {
         return ResponseEntity.ok(financialService.createExpense(request));
     }

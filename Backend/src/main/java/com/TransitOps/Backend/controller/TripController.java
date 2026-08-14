@@ -31,25 +31,25 @@ public class TripController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'DRIVER')")
+    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN', 'DRIVER')")
     public ResponseEntity<TripResponse> createTrip(@Valid @RequestBody TripCreateRequest request) {
         return ResponseEntity.ok(tripService.createTrip(request));
     }
 
     @PutMapping("/{id}/dispatch")
-    @PreAuthorize("hasRole('FLEET_MANAGER')")
+    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<TripResponse> dispatchTrip(@PathVariable Long id) {
         return ResponseEntity.ok(tripService.dispatchTrip(id));
     }
 
     @PutMapping("/{id}/complete")
-    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'DRIVER')")
+    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN', 'DRIVER')")
     public ResponseEntity<TripResponse> completeTrip(@PathVariable Long id, @Valid @RequestBody TripCompleteRequest request) {
         return ResponseEntity.ok(tripService.completeTrip(id, request));
     }
 
     @PutMapping("/{id}/cancel")
-    @PreAuthorize("hasRole('FLEET_MANAGER')")
+    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<TripResponse> cancelTrip(@PathVariable Long id) {
         return ResponseEntity.ok(tripService.cancelTrip(id));
     }

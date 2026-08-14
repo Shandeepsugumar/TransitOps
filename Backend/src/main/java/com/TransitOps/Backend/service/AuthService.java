@@ -37,7 +37,7 @@ public class AuthService {
         }
 
         if (user.getStatus() == TenantStatus.PENDING) {
-            throw new AccessDeniedException("Account is pending approval");
+            throw new AccessDeniedException("Your join request is pending approval by the company administrator.");
         }
         if (user.getStatus() == TenantStatus.REJECTED) {
             throw new AccessDeniedException("Account registration was rejected");

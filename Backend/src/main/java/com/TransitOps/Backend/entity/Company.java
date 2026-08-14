@@ -26,7 +26,7 @@ public class Company {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private TenantStatus status = TenantStatus.PENDING;
+    private TenantStatus status = TenantStatus.ACTIVE;
 
     @Column(nullable = false, updatable = false)
     @Builder.Default

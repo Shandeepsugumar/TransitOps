@@ -50,7 +50,7 @@ public class TeamService {
                 .role(role)
                 .enabled(true)
                 .companyId(companyId)
-                .status(TenantStatus.APPROVED) // Auto approved by Fleet Manager
+                .status(TenantStatus.ACTIVE) // Auto approved by Fleet Manager
                 .build();
 
         return toResponse(userRepository.save(user));

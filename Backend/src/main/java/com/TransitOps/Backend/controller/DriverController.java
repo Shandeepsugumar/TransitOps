@@ -36,13 +36,13 @@ public class DriverController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SAFETY_OFFICER')")
+    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN', 'SAFETY_OFFICER')")
     public ResponseEntity<DriverResponse> createDriver(@Valid @RequestBody DriverRequest request) {
         return ResponseEntity.ok(driverService.createDriver(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SAFETY_OFFICER')")
+    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN', 'SAFETY_OFFICER')")
     public ResponseEntity<DriverResponse> updateDriver(@PathVariable Long id, @Valid @RequestBody DriverRequest request) {
         return ResponseEntity.ok(driverService.updateDriver(id, request));
     }

@@ -40,10 +40,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/companies/register").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers("/api/companies/join").permitAll()
+                .requestMatchers("/api/companies/search").permitAll()
                 .anyRequest().authenticated()
             )
-            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

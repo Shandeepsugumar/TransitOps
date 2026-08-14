@@ -9,32 +9,35 @@ import { adminApi } from '../../api/adminApi';
 
 export default function CompanyApprovals() {
   const queryClient = useQueryClient();
-  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, id: null, action: null }); // action: 'approve' | 'reject'
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, id: null, action: null });
 
-  const { data: companies = [], isLoading } = useQuery({
-    queryKey: ['pendingCompanies'],
-    queryFn: adminApi.getPendingCompanies,
+  const { data: users = [], isLoading } = useQuery({
+    queryKey: ['pendingApprovals'],
+    queryFn: adminApi.getPendingApprovals,
   });
 
   const approveMutation = useMutation({
-    mutationFn: adminApi.approveCompany,
-    onSuccess: () => {
-      toast.success('Company approved successfully');
-      queryClient.invalidateQueries({ queryKey: ['pendingCompanies'] });
+    mutationFn: adminApi.approveUser,
+    onSuccess: (data) => {
+      toast.success(data?.message || 'User approved successfully');
+      setConfirmDialog({ isOpen: false, id: null, action: null });
+      queryClient.invalidateQueries({ queryKey: ['pendingApprovals'] });
     },
     onError: (error) => {
-      toast.error(error.backendMessage || 'Failed to approve company');
+      toast.error(error.backendMessage || 'Failed to approve user');
+      setConfirmDialog({ isOpen: false, id: null, action: null });
     }
   });
 
   const rejectMutation = useMutation({
-    mutationFn: adminApi.rejectCompany,
+    mutationFn: adminApi.rejectUser,
     onSuccess: () => {
-      toast.success('Company rejected');
-      queryClient.invalidateQueries({ queryKey: ['pendingCompanies'] });
+      toast.success('User rejected');
+      setConfirmDialog({ isOpen: false, id: null, action: null });
+      queryClient.invalidateQueries({ queryKey: ['pendingApprovals'] });
     },
     onError: (error) => {
-      toast.error(error.backendMessage || 'Failed to reject company');
+      toast.error(error.backendMessage || 'Failed to reject user');
     }
   });
 
@@ -51,15 +54,14 @@ export default function CompanyApprovals() {
   };
 
   const columns = [
-    { header: 'Company Name', accessor: 'name' },
-    { header: 'Registration Details', accessor: 'registrationDetails' },
-    { header: 'Admin', accessor: 'adminFullName' },
-    { header: 'Email', accessor: 'adminEmail' },
+    { header: 'Name', accessor: 'fullName' },
+    { header: 'Email', accessor: 'email' },
     { 
-      header: 'Status', 
-      accessor: 'status',
-      render: (status) => <StatusBadge status={status || 'PENDING'} />
+      header: 'Role', 
+      accessor: 'role',
+      render: (role) => <StatusBadge status={role} />
     },
+    { header: 'Contact', accessor: 'contactNumber' },
     {
       header: 'Actions',
       accessor: 'id',
@@ -89,24 +91,30 @@ export default function CompanyApprovals() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[#1C1C1E]">Company Approvals</h1>
-        <p className="text-[#6B6B70] mt-1">Review and approve new company registrations.</p>
+        <h1 className="text-2xl font-bold text-[#1C1C1E]">Pending Approvals</h1>
+        <p className="text-[#6B6B70] mt-1">Review join requests for your company.</p>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-[#E5E5E7] overflow-hidden">
-        <DataTable 
-          columns={columns} 
-          data={companies} 
-          isLoading={isLoading} 
-        />
+        {users.length === 0 && !isLoading ? (
+          <div className="p-8 text-center text-[#6B6B70]">
+            No pending join requests.
+          </div>
+        ) : (
+          <DataTable 
+            columns={columns} 
+            data={users} 
+            isLoading={isLoading} 
+          />
+        )}
       </div>
 
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
         onClose={() => setConfirmDialog({ isOpen: false, id: null, action: null })}
         onConfirm={confirmAction}
-        title={confirmDialog.action === 'approve' ? 'Approve Company' : 'Reject Company'}
-        message={`Are you sure you want to ${confirmDialog.action} this company registration?`}
+        title={confirmDialog.action === 'approve' ? 'Approve User' : 'Reject User'}
+        message={`Are you sure you want to ${confirmDialog.action} this user?`}
         confirmText={confirmDialog.action === 'approve' ? 'Approve' : 'Reject'}
         isDestructive={confirmDialog.action === 'reject'}
       />

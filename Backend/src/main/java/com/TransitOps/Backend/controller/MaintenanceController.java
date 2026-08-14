@@ -29,13 +29,13 @@ public class MaintenanceController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('FLEET_MANAGER')")
+    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<MaintenanceResponse> createMaintenanceLog(@Valid @RequestBody MaintenanceRequest request) {
         return ResponseEntity.ok(maintenanceService.createMaintenanceLog(request));
     }
 
     @PutMapping("/{id}/close")
-    @PreAuthorize("hasRole('FLEET_MANAGER')")
+    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<MaintenanceResponse> closeMaintenanceLog(@PathVariable Long id) {
         return ResponseEntity.ok(maintenanceService.closeMaintenanceLog(id));
     }

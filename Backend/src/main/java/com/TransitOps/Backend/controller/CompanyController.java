@@ -1,7 +1,7 @@
 package com.TransitOps.Backend.controller;
 
-import com.TransitOps.Backend.dto.CompanyRegistrationRequest;
-import com.TransitOps.Backend.dto.CompanyResponse;
+import com.TransitOps.Backend.dto.*;
+import com.TransitOps.Backend.security.SecurityUtils;
 import com.TransitOps.Backend.service.CompanyService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -21,31 +22,42 @@ public class CompanyController {
     }
 
     @PostMapping("/companies/register")
-    public ResponseEntity<String> registerCompany(@Valid @RequestBody CompanyRegistrationRequest request) {
+    public ResponseEntity<Map<String, String>> registerCompany(@Valid @RequestBody CompanyRegistrationRequest request) {
         companyService.registerCompany(request);
-        return ResponseEntity.ok("Company registered successfully and is pending approval.");
+        return ResponseEntity.ok(Map.of("message", "Company created successfully. You can now sign in."));
     }
 
-    @GetMapping("/admin/companies")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<List<CompanyResponse>> getPendingCompanies(@RequestParam(required = false, defaultValue = "PENDING") String status) {
-        if ("PENDING".equalsIgnoreCase(status)) {
-            return ResponseEntity.ok(companyService.getPendingCompanies());
-        }
-        return ResponseEntity.badRequest().build();
+    @PostMapping("/companies/join")
+    public ResponseEntity<Map<String, String>> joinCompany(@Valid @RequestBody JoinCompanyRequest request) {
+        companyService.joinCompany(request);
+        return ResponseEntity.ok(Map.of("message", "Your join request has been submitted. The company administrator will review it."));
     }
 
-    @PutMapping("/admin/companies/{id}/approve")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<String> approveCompany(@PathVariable Long id) {
-        companyService.approveCompany(id);
-        return ResponseEntity.ok("Company approved.");
+    @GetMapping("/companies/search")
+    public ResponseEntity<List<CompanyResponse>> searchCompanies(@RequestParam(required = false, defaultValue = "") String q) {
+        return ResponseEntity.ok(companyService.searchCompanies(q));
     }
 
-    @PutMapping("/admin/companies/{id}/reject")
+    @GetMapping("/companies/pending-approvals")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<String> rejectCompany(@PathVariable Long id) {
-        companyService.rejectCompany(id);
-        return ResponseEntity.ok("Company rejected.");
+    public ResponseEntity<List<PendingApprovalResponse>> getPendingApprovals() {
+        Long companyId = SecurityUtils.getCompanyId();
+        return ResponseEntity.ok(companyService.getPendingApprovals(companyId));
+    }
+
+    @PutMapping("/companies/approvals/{userId}/approve")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<Map<String, String>> approveJoinRequest(@PathVariable Long userId) {
+        Long companyId = SecurityUtils.getCompanyId();
+        String result = companyService.approveJoinRequest(userId, companyId);
+        return ResponseEntity.ok(Map.of("message", result));
+    }
+
+    @PutMapping("/companies/approvals/{userId}/reject")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<Map<String, String>> rejectJoinRequest(@PathVariable Long userId) {
+        Long companyId = SecurityUtils.getCompanyId();
+        companyService.rejectJoinRequest(userId, companyId);
+        return ResponseEntity.ok(Map.of("message", "User rejected."));
     }
 }

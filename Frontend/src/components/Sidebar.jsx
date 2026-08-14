@@ -20,7 +20,15 @@ const Sidebar = () => {
   const getNavItems = (userRole) => {
     if (userRole === 'SUPER_ADMIN') {
       return [
-        { path: '/admin/companies', label: 'Company Approvals', icon: Building }
+        { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { path: '/vehicles', label: 'Vehicles', icon: Truck },
+        { path: '/drivers', label: 'Drivers', icon: Users },
+        { path: '/trips', label: 'Trips', icon: Route },
+        { path: '/maintenance', label: 'Maintenance', icon: Wrench },
+        { path: '/expenses', label: 'Expenses', icon: Banknote },
+        { path: '/reports', label: 'Reports', icon: FileText },
+        { path: '/team', label: 'Team', icon: Shield },
+        { path: '/pending-approvals', label: 'Pending Approvals', icon: Building },
       ];
     }
 

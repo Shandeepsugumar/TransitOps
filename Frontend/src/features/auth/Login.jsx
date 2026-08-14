@@ -39,7 +39,7 @@ export default function Login() {
       });
       toast.success('Login successful');
       if (data.role === 'SUPER_ADMIN' || data.role === 'ROLE_SUPER_ADMIN') {
-        navigate('/admin/companies');
+        navigate('/pending-approvals');
       } else {
         navigate('/');
       }
@@ -50,7 +50,8 @@ export default function Login() {
         setWarningMessage('Your company registration is pending approval. Please wait for an administrator to approve it.');
       } else {
         setWarningMessage('');
-        toast.error(msg || 'Invalid credentials');
+        const defaultMsg = error.response?.status === 401 ? 'Invalid email or password' : 'An unexpected error occurred';
+        toast.error(msg || defaultMsg);
       }
     },
   });
@@ -130,6 +131,9 @@ export default function Login() {
         <div className="mt-6 text-center space-y-2">
           <Link to="/register-company" className="text-sm text-[#D97706] hover:underline block">
             Registering a new company? Start here
+          </Link>
+          <Link to="/join-company" className="text-sm text-[#D97706] hover:underline block">
+            Joining an existing company? Apply here
           </Link>
         </div>
       </div>

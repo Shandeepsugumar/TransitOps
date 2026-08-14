@@ -49,8 +49,8 @@ export default function RegisterCompany() {
           <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
           </div>
-          <h2 className="text-2xl font-bold text-[#1C1C1E] mb-2">Registration Submitted</h2>
-          <p className="text-[#6B6B70] mb-6">Your company registration is pending approval. You will be notified once an administrator reviews it.</p>
+          <h2 className="text-2xl font-bold text-[#1C1C1E] mb-2">Company Created Successfully!</h2>
+          <p className="text-[#6B6B70] mb-6">Your company has been created and you are now the administrator. You can sign in immediately.</p>
           <Link to="/login" className="inline-block px-4 py-2 bg-[#D97706] text-white rounded-lg hover:bg-amber-700 transition-colors">
             Return to Login
           </Link>

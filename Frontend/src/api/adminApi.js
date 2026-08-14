@@ -1,16 +1,16 @@
 import axiosClient from './axiosClient';
 
 export const adminApi = {
-  getPendingCompanies: async () => {
-    const { data } = await axiosClient.get('/admin/companies?status=PENDING');
+  getPendingApprovals: async () => {
+    const { data } = await axiosClient.get('/companies/pending-approvals');
     return data;
   },
-  approveCompany: async (id) => {
-    const { data } = await axiosClient.put(`/admin/companies/${id}/approve`);
+  approveUser: async (userId) => {
+    const { data } = await axiosClient.put(`/companies/approvals/${userId}/approve`);
     return data;
   },
-  rejectCompany: async (id) => {
-    const { data } = await axiosClient.put(`/admin/companies/${id}/reject`);
+  rejectUser: async (userId) => {
+    const { data } = await axiosClient.put(`/companies/approvals/${userId}/reject`);
     return data;
   }
 };
