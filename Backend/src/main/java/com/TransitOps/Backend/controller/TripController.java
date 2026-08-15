@@ -37,7 +37,7 @@ public class TripController {
     }
 
     @PutMapping("/{id}/dispatch")
-    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN')")
     public ResponseEntity<TripResponse> dispatchTrip(@PathVariable Long id) {
         return ResponseEntity.ok(tripService.dispatchTrip(id));
     }
@@ -49,7 +49,7 @@ public class TripController {
     }
 
     @PutMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN')")
     public ResponseEntity<TripResponse> cancelTrip(@PathVariable Long id) {
         return ResponseEntity.ok(tripService.cancelTrip(id));
     }

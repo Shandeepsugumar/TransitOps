@@ -26,7 +26,7 @@ public class TeamController {
     }
 
     @PostMapping("/users")
-    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN')")
     public ResponseEntity<TeamUserResponse> addTeamMember(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
         Long companyId = getCompanyId(httpRequest);
         if (companyId == null) {
@@ -36,7 +36,7 @@ public class TeamController {
     }
 
     @GetMapping("/users")
-    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN')")
     public ResponseEntity<List<TeamUserResponse>> getTeamMembers(HttpServletRequest httpRequest) {
         Long companyId = getCompanyId(httpRequest);
         if (companyId == null) {
@@ -46,7 +46,7 @@ public class TeamController {
     }
 
     @PutMapping("/users/{id}")
-    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('FLEET_MANAGER', 'SUPER_ADMIN')")
     public ResponseEntity<TeamUserResponse> updateTeamMember(@PathVariable Long id, @Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
         Long companyId = getCompanyId(httpRequest);
         if (companyId == null) {
