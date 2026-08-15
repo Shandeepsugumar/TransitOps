@@ -11,7 +11,7 @@ public class MaintenanceRequest {
     @NotBlank
     private String maintenanceType;
     private String description;
-    @NotNull @Positive
+    @NotNull @PositiveOrZero
     private BigDecimal cost;
     @NotBlank
     private String date;
