@@ -161,7 +161,7 @@ export default function Trips() {
                   <td className="p-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       trip.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 
-                      trip.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700' :
+                      trip.status === 'DISPATCHED' ? 'bg-blue-100 text-blue-700' :
                       trip.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
                       'bg-gray-100 text-gray-700'
                     }`}>
@@ -170,7 +170,7 @@ export default function Trips() {
                   </td>
                   {canModify && (
                     <td className="p-4 flex items-center justify-end gap-2">
-                      {trip.status === 'PLANNED' && (
+                      {trip.status === 'DRAFT' && (
                         <>
                           <button
                             onClick={() => dispatchMutation.mutate(trip.id)}
@@ -188,7 +188,7 @@ export default function Trips() {
                           )}
                         </>
                       )}
-                      {trip.status === 'IN_PROGRESS' && (
+                      {trip.status === 'DISPATCHED' && (
                         <button
                           onClick={() => setCompleteTripId(trip.id)}
                           className="px-3 py-1 bg-[#16A34A] text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1 shadow-sm"

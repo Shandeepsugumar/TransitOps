@@ -9,6 +9,7 @@ import java.util.List;
 import java.math.BigDecimal;
 
 public interface TripRepository extends JpaRepository<Trip, Long> {
+    @Query("SELECT t FROM Trip t JOIN FETCH t.vehicle JOIN FETCH t.driver WHERE t.companyId = :companyId AND t.status = :status")
     List<Trip> findByCompanyIdAndStatus(Long companyId, TripStatus status);
     long countByCompanyIdAndStatus(Long companyId, TripStatus status);
     @Query("SELECT COALESCE(SUM(t.revenue), 0) FROM Trip t WHERE t.vehicle.id = :vehicleId AND t.status = 'COMPLETED'")
@@ -17,10 +18,9 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     Double sumDistanceByVehicleId(Long vehicleId);
     @Query("SELECT COALESCE(SUM(t.fuelConsumed), 0) FROM Trip t WHERE t.vehicle.id = :vehicleId AND t.status = 'COMPLETED'")
     Double sumFuelConsumedByVehicleId(Long vehicleId);
+    @Query("SELECT t FROM Trip t JOIN FETCH t.vehicle JOIN FETCH t.driver WHERE t.companyId = :companyId")
     List<Trip> findByCompanyId(Long companyId);
+    
+    @Query("SELECT t FROM Trip t JOIN FETCH t.vehicle JOIN FETCH t.driver WHERE t.id = :id AND t.companyId = :companyId")
     Optional<Trip> findByIdAndCompanyId(Long id, Long companyId);
 }
-
-
-
-
