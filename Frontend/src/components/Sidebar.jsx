@@ -13,6 +13,7 @@ import {
   Shield
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import Logo from './Logo';
 
 const Sidebar = () => {
   const { logout, fullName, role } = useAuthStore();
@@ -69,7 +70,7 @@ const Sidebar = () => {
   return (
     <aside className="w-64 bg-[#1C1C1E] flex flex-col h-screen fixed top-0 left-0 shadow-lg z-20">
       <div className="h-16 flex items-center px-6 border-b border-[#333336]">
-        <h1 className="text-white text-xl font-bold tracking-tight">TransitOps</h1>
+        <Logo size="sm" textClassName="text-xl" />
       </div>
       
       <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2">

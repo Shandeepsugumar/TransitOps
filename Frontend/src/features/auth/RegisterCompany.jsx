@@ -7,6 +7,7 @@ import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { companyApi } from '../../api/companyApi';
 import { User, Mail, Lock, Building, FileText } from 'lucide-react';
+import Logo from '../../components/Logo';
 
 const registerCompanySchema = z.object({
   companyName: z.string().min(2, 'Company name is required'),
@@ -63,8 +64,10 @@ export default function RegisterCompany() {
     <div className="min-h-screen bg-[#F7F7F8] flex items-center justify-center p-4">
       <div className="bg-white border border-[#E5E5E7] shadow-sm rounded-lg w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-[#1C1C1E]">TransitOps</h1>
-          <p className="text-[#6B6B70] mt-2">Register your company</p>
+          <div className="flex justify-center mb-3">
+            <Logo size="lg" light={true} textClassName="text-2xl" />
+          </div>
+          <p className="text-[#6B6B70]">Register your company</p>
         </div>
 
         <form method="post" onSubmit={handleSubmit(onSubmit)} className="space-y-4">

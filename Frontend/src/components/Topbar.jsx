@@ -1,19 +1,23 @@
 import React from 'react';
 import { Menu, Bell } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import Logo from './Logo';
 
 const Topbar = ({ onMenuClick }) => {
   const { fullName } = useAuthStore();
 
   return (
     <header className="h-16 bg-white border-b border-[#E5E5E7] flex items-center justify-between px-6 sticky top-0 z-10 shadow-sm">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <button 
           onClick={onMenuClick}
           className="p-2 -ml-2 text-[#6B6B70] hover:text-[#1C1C1E] lg:hidden rounded-lg hover:bg-[#F7F7F8] transition-colors"
         >
           <Menu size={24} />
         </button>
+        <div className="lg:hidden flex items-center">
+          <Logo size="xs" light={true} textClassName="text-base" />
+        </div>
       </div>
       
       <div className="flex items-center gap-4">
